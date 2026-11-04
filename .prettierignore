@@ -1,0 +1,9 @@
+node_modules
+.next
+.tools
+.npm-cache
+public/images
+public/icon.svg
+package-lock.json
+next-env.d.ts
+AGENTS.md

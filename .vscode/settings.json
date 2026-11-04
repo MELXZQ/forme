@@ -1,0 +1,8 @@
+{
+  "terminal.integrated.env.osx": {
+    "PATH": "${workspaceFolder}/.tools/node/bin:${env:PATH}"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.tabSize": 2,
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+}

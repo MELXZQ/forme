@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="760" viewBox="0 0 500 760"><defs>
+<linearGradient id="silver" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#555b5e"/><stop offset=".18" stop-color="#d9dedd"/><stop offset=".34" stop-color="#fafbf5"/><stop offset=".46" stop-color="#9ca4a3"/><stop offset=".62" stop-color="#51595c"/><stop offset=".78" stop-color="#e3e7df"/><stop offset="1" stop-color="#7b8484"/></linearGradient>
+<linearGradient id="gold"><stop stop-color="#78674e"/><stop offset=".25" stop-color="#e5ce9e"/><stop offset=".5" stop-color="#ac9165"/><stop offset=".7" stop-color="#f3dfb5"/><stop offset="1" stop-color="#7b6649"/></linearGradient>
+<linearGradient id="stone" x2=".8" y2="1"><stop stop-color="#dedbd3"/><stop offset="1" stop-color="#b6afa3"/></linearGradient>
+<linearGradient id="face" x1="0" x2="1"><stop stop-color="#9c725a"/><stop offset=".45" stop-color="#d1a88a"/><stop offset="1" stop-color="#aa8066"/></linearGradient>
+<linearGradient id="shirt" x2="1" y2="1"><stop stop-color="#3b3f3f"/><stop offset="1" stop-color="#181b1c"/></linearGradient>
+<filter id="shadow" x="-60%" y="-60%" width="230%" height="230%"><feDropShadow dx="5" dy="18" stdDeviation="12" flood-color="#35332e" flood-opacity=".2"/></filter>
+<filter id="soft"><feGaussianBlur stdDeviation="20"/></filter>
+</defs><g transform="translate(-250 0)"><ellipse cx="500" cy="730" rx="190" ry="20" fill="#000" opacity=".4" filter="url(#soft)"/>
+  <path d="M457 243L450 315Q490 355 547 314L538 241Z" fill="url(#face)"/>
+  <path d="M449 294L362 319Q321 336 304 402L270 659L345 700L384 505L378 760H624L620 510L655 703L733 660L695 395Q680 335 639 319L546 294Q503 340 449 294Z" fill="url(#shirt)"/>
+  <path d="M449 299L476 341L497 384L520 338L546 299Q506 319 449 299Z" fill="#b98e72"/>
+  <path d="M428 159Q426 85 500 79Q566 78 575 149L562 238Q537 281 500 286Q456 275 437 234Z" fill="url(#face)"/>
+  <path d="M432 175Q407 91 455 66Q491 43 541 66Q594 83 577 169L555 140L550 110Q506 139 453 115L446 171Z" fill="#302d29"/>
+  <path d="M442 96Q477 62 548 82" fill="none" stroke="#51453a" stroke-width="10" opacity=".5"/>
+  <ellipse cx="434" cy="190" rx="13" ry="26" fill="#b78b71"/><ellipse cx="570" cy="190" rx="12" ry="26" fill="#aa7d64"/>
+  <path d="M461 178L484 175M520 175L543 178" stroke="#584333" stroke-width="5" stroke-linecap="round"/>
+  <path d="M464 189L482 188M521 188L539 189" stroke="#352f28" stroke-width="3"/>
+  <path d="M501 188L495 220L507 222" fill="none" stroke="#a27258" stroke-width="3"/>
+  <path d="M480 245Q500 253 522 241" fill="none" stroke="#7a5442" stroke-width="3"/>
+  <path d="M449 229Q459 276 501 282Q539 272 553 232Q531 253 518 259L482 258Z" fill="#503a2d" opacity=".27"/>
+  <path d="M355 512L322 625Q316 652 355 662L512 563L487 524L375 575Z" fill="url(#face)"/>
+  <path d="M657 510L691 627Q694 654 654 661L487 576L511 533L635 577Z" fill="url(#face)"/>
+  <path d="M478 526Q480 511 498 497L531 478Q540 473 545 481L516 509L556 493Q565 492 565 500L528 524L569 512Q578 513 574 522L535 542L564 534Q576 537 568 547L520 572Q504 580 486 566Z" fill="url(#face)"/>
+  <path d="M505 536Q484 527 472 518L442 495Q431 491 430 500L452 523L416 509Q407 508 409 518L441 539L407 530Q396 534 403 542L438 558L416 553Q404 556 416 566L468 587Q489 594 507 575Z" fill="url(#face)"/>
+  <path d="M455 313Q456 384 499 416Q546 380 545 313" fill="none" stroke="#979f9b" stroke-width="4"/>
+  <path d="M455 313Q456 384 499 416Q546 380 545 313" fill="none" stroke="#f4f0dc" stroke-width="1" stroke-dasharray="2 5"/><rect x="491" y="412" width="16" height="25" rx="4" fill="url(#silver)"/>
+  <ellipse cx="435" cy="211" rx="10" ry="14" fill="none" stroke="url(#silver)" stroke-width="5"/><circle cx="511" cy="214" r="3.5" fill="#e8e7dc"/>
+  <path d="M638 575L628 600" stroke="url(#silver)" stroke-width="12"/><path d="M443 537L434 551" stroke="url(#silver)" stroke-width="9"/><path d="M455 546L448 560" stroke="url(#silver)" stroke-width="6"/>
+  <path d="M382 400L361 487M619 398L645 484M401 641L393 752M600 641L611 752" stroke="#535957" stroke-width="2" opacity=".5"/></g></svg>

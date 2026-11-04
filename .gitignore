@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.tools/
+.npm-cache/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+.env*
+!.env.example

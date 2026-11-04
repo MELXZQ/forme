@@ -1,0 +1,77 @@
+import type { Product, CategoryId } from "@/lib/types";
+const entries: [
+  string,
+  string,
+  CategoryId,
+  number,
+  number | undefined,
+  string[],
+][] = [
+  ["arc-signet", "Arc Signet Ring", "rings", 89, undefined, ["quiet-form"]],
+  [
+    "curb-chain",
+    "Essential Curb Chain",
+    "necklaces",
+    119,
+    undefined,
+    ["linked"],
+  ],
+  [
+    "daily-hoops",
+    "Daily Hoop Pair",
+    "earrings",
+    59,
+    undefined,
+    ["quiet-form", "linked"],
+  ],
+  [
+    "link-bracelet",
+    "Studio Link Bracelet",
+    "bracelets",
+    99,
+    undefined,
+    ["linked"],
+  ],
+  ["contour-band", "Contour Band", "rings", 69, undefined, ["quiet-form"]],
+  [
+    "fine-chain",
+    "Fine Line Necklace",
+    "necklaces",
+    79,
+    undefined,
+    ["quiet-form"],
+  ],
+  ["bar-stud", "Linear Stud Pair", "earrings", 49, undefined, ["quiet-form"]],
+  ["orbit-piercing", "Orbit Piercing", "piercing", 35, undefined, ["linked"]],
+  ["ridge-ring", "Ridge Ring", "rings", 59, 79, ["quiet-form"]],
+  ["box-chain", "Box Chain Necklace", "necklaces", 79, 109, ["linked"]],
+  ["mini-hoop", "Mini Hoop Pair", "earrings", 39, 55, ["linked"]],
+  ["cuff-bracelet", "Open Cuff Bracelet", "bracelets", 69, 95, ["quiet-form"]],
+  ["double-band", "Double Line Ring", "rings", 49, 69, ["quiet-form"]],
+  ["pendant-chain", "Frame Pendant", "necklaces", 89, 119, ["linked"]],
+  ["chain-bracelet", "Curb Chain Bracelet", "bracelets", 65, 89, ["linked"]],
+  ["point-piercing", "Point Piercing", "piercing", 25, 35, ["quiet-form"]],
+];
+export const products: Product[] = entries.map(
+  ([slug, name, category, price, compareAtPrice, collectionIds], i) => ({
+    id: `prd-${String(i + 1).padStart(3, "0")}`,
+    slug,
+    name,
+    category,
+    price,
+    compareAtPrice,
+    currency: "AUD",
+    images: [
+      {
+        src: `/images/products/${slug}.svg`,
+        alt: `${name} — illustrative product preview`,
+      },
+    ],
+    isNew: i < 8,
+    isOnSale: compareAtPrice !== undefined && compareAtPrice > price,
+    collectionIds,
+    releasedAt: `2026-10-${String(31 - i).padStart(2, "0")}`,
+    description:
+      "A considered detail for your everyday rotation. This is a concept product with illustrative imagery. Final materials, measurements and availability will be added with the real catalogue.",
+  }),
+);
