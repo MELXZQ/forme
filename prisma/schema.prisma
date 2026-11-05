@@ -1,0 +1,1045 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String    @default("admin")
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Session {
+  id        String   @id
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Category {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  description String        @default("")
+  sortOrder   Int           @default(0)
+  active      Boolean       @default(true)
+  products    Product[]
+  markers     ModelMarker[]
+}
+
+model Product {
+  id            String              @id @default(cuid())
+  slug          String              @unique
+  name          String
+  summary       String              @default("")
+  description   String              @default("")
+  status        ProductStatus       @default(DRAFT)
+  categoryId    String
+  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  isFeatured    Boolean             @default(false)
+  featuredOrder Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  publishedAt   DateTime?
+  variants      ProductVariant[]
+  images        ProductImage[]
+  collections   ProductCollection[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId, status])
+}
+
+model ProductVariant {
+  id                  String             @id @default(cuid())
+  sku                 String             @unique
+  productId           String
+  product             Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size                String             @default("")
+  color               String             @default("")
+  priceCents          Int
+  compareAtPriceCents Int?
+  currency            String             @default("AUD")
+  stock               Int                @default(0)
+  enabled             Boolean            @default(true)
+  sortOrder           Int                @default(0)
+  images              ProductImage[]
+  balances            InventoryBalance[]
+  legacyStock         LegacyStock?
+  inventoryPolicy     SkuPolicy?
+  inventoryLedger     InventoryLedger[]
+  transferLines       TransferLine[]
+  reservations        StockReservation[]
+  adjustments         StockAdjustment[]
+
+  @@index([productId, enabled])
+}
+
+model Collection {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  name        String
+  description String              @default("")
+  mediaId     String?
+  media       Media?              @relation("CollectionImage", fields: [mediaId], references: [id], onDelete: Restrict)
+  active      Boolean             @default(true)
+  featured    Boolean             @default(true)
+  sortOrder   Int                 @default(0)
+  products    ProductCollection[]
+}
+
+model ProductCollection {
+  productId    String
+  collectionId String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Restrict)
+
+  @@id([productId, collectionId])
+}
+
+model Media {
+  id                 String              @id @default(cuid())
+  storageKey         String              @unique
+  source             String              @default("local")
+  mimeType           String
+  sizeBytes          Int
+  width              Int
+  height             Int
+  alt                String              @default("")
+  createdAt          DateTime            @default(now())
+  productImages      ProductImage[]
+  collections        Collection[]        @relation("CollectionImage")
+  desktopSlides      HeroSlide[]         @relation("SlideDesktop")
+  mobileSlides       HeroSlide[]         @relation("SlideMobile")
+  desktopModels      HomeSettings[]      @relation("ModelDesktop")
+  mobileModels       HomeSettings[]      @relation("ModelMobile")
+  orderImages        OrderLine[]
+  receiptAttachments ReceiptAttachment[]
+}
+
+model ProductImage {
+  id        String          @id @default(cuid())
+  productId String
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media           @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  sortOrder Int             @default(0)
+
+  @@unique([productId, mediaId])
+}
+
+model HeroSlide {
+  id             String  @id @default(cuid())
+  eyebrow        String  @default("")
+  title          String
+  description    String  @default("")
+  cta            String
+  href           String
+  desktopMediaId String
+  desktopMedia   Media   @relation("SlideDesktop", fields: [desktopMediaId], references: [id], onDelete: Restrict)
+  mobileMediaId  String?
+  mobileMedia    Media?  @relation("SlideMobile", fields: [mobileMediaId], references: [id], onDelete: Restrict)
+  position       String  @default("50% 50%")
+  mobilePosition String  @default("50% 50%")
+  sortOrder      Int     @default(0)
+  active         Boolean @default(true)
+}
+
+model HomeSettings {
+  id              String   @id @default("home")
+  desktopMediaId  String?
+  desktopMedia    Media?   @relation("ModelDesktop", fields: [desktopMediaId], references: [id], onDelete: Restrict)
+  mobileMediaId   String?
+  mobileMedia     Media?   @relation("ModelMobile", fields: [mobileMediaId], references: [id], onDelete: Restrict)
+  desktopPosition String   @default("50% 50%")
+  mobilePosition  String   @default("50% 50%")
+  updatedAt       DateTime @updatedAt
+}
+
+model ModelMarker {
+  id             String   @id @default(cuid())
+  categoryId     String   @unique
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  desktopAnchorX Float
+  desktopAnchorY Float
+  desktopLabelX  Float
+  desktopLabelY  Float
+  mobileAnchorX  Float
+  mobileAnchorY  Float
+  mobileLabelX   Float
+  mobileLabelY   Float
+}
+
+enum WarehouseCode {
+  BEIJING
+  MELBOURNE
+}
+
+enum TransferStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  CLOSED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REVIEW
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  SHIPPED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  ACTIVE
+  RELEASED
+  CONSUMED
+}
+
+model InventoryBalance {
+  id          String         @id @default(cuid())
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  warehouse   WarehouseCode
+  onHand      Int            @default(0)
+  reserved    Int            @default(0)
+  unavailable Int            @default(0)
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([variantId, warehouse])
+}
+
+model LegacyStock {
+  variantId    String         @id
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  originalQty  Int
+  remainingQty Int
+  createdAt    DateTime       @default(now())
+}
+
+model SkuPolicy {
+  variantId         String         @id
+  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  lowStockThreshold Int            @default(3)
+  showRestocking    Boolean        @default(true)
+}
+
+model InventoryLedger {
+  id                String         @id @default(cuid())
+  variantId         String
+  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  warehouse         WarehouseCode
+  kind              String
+  deltaOnHand       Int
+  deltaReserved     Int
+  deltaUnavailable  Int
+  deltaInTransit    Int            @default(0)
+  beforeOnHand      Int
+  beforeReserved    Int
+  beforeUnavailable Int
+  afterOnHand       Int
+  afterReserved     Int
+  afterUnavailable  Int
+  documentType      String
+  documentId        String
+  actorId           String?
+  reason            String
+  createdAt         DateTime       @default(now())
+
+  @@index([variantId, warehouse, createdAt])
+  @@index([documentType, documentId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  objectType String
+  objectId   String
+  before     Json?
+  after      Json?
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([objectType, objectId, createdAt])
+}
+
+model OperationCommand {
+  key         String   @id
+  fingerprint String
+  actorId     String?
+  result      Json
+  createdAt   DateTime @default(now())
+}
+
+model Transfer {
+  id             String            @id @default(cuid())
+  number         String            @unique
+  source         WarehouseCode     @default(BEIJING)
+  destination    WarehouseCode     @default(MELBOURNE)
+  status         TransferStatus    @default(DRAFT)
+  createdBy      String
+  carrier        String            @default("")
+  trackingNumber String            @default("")
+  dispatchedAt   DateTime?
+  etaStart       DateTime?
+  etaEnd         DateTime?
+  exception      Boolean           @default(false)
+  showRestocking Boolean           @default(true)
+  notes          String            @default("")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  lines          TransferLine[]
+  receipts       TransferReceipt[]
+
+  @@index([status, etaEnd])
+}
+
+model TransferLine {
+  id                  String                @id @default(cuid())
+  transferId          String
+  transfer            Transfer              @relation(fields: [transferId], references: [id], onDelete: Restrict)
+  variantId           String
+  variant             ProductVariant        @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  planned             Int
+  sent                Int                   @default(0)
+  receivedSellable    Int                   @default(0)
+  receivedUnavailable Int                   @default(0)
+  lost                Int                   @default(0)
+  returned            Int                   @default(0)
+  receipts            TransferReceiptLine[]
+
+  @@unique([transferId, variantId])
+}
+
+model TransferReceipt {
+  id          String                @id @default(cuid())
+  transferId  String
+  transfer    Transfer              @relation(fields: [transferId], references: [id], onDelete: Restrict)
+  actorId     String
+  reason      String
+  kind        String                @default("DESTINATION_RECEIPT")
+  notes       String                @default("")
+  attachments ReceiptAttachment[]
+  createdAt   DateTime              @default(now())
+  lines       TransferReceiptLine[]
+}
+
+model TransferReceiptLine {
+  id             String          @id @default(cuid())
+  receiptId      String
+  receipt        TransferReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  transferLineId String
+  transferLine   TransferLine    @relation(fields: [transferLineId], references: [id], onDelete: Restrict)
+  sellable       Int
+  unavailable    Int
+  lost           Int
+  returned       Int             @default(0)
+}
+
+model ReceiptAttachment {
+  receiptId String
+  receipt   TransferReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  mediaId   String
+  media     Media           @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@id([receiptId, mediaId])
+}
+
+model StockAdjustment {
+  id             String         @id @default(cuid())
+  variantId      String
+  variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  warehouse      WarehouseCode
+  countedOnHand  Int
+  expectedOnHand Int
+  reason         String
+  submittedBy    String
+  status         String         @default("PENDING")
+  decidedBy      String?
+  decisionReason String?
+  createdAt      DateTime       @default(now())
+  decidedAt      DateTime?
+}
+
+model CommerceSettings {
+  id                 String   @id @default("commerce")
+  shippingCents      Int?
+  reservationMinutes Int      @default(30)
+  updatedAt          DateTime @updatedAt
+}
+
+model ShopOrder {
+  id                  String             @id @default(cuid())
+  number              String             @unique
+  email               String
+  recipientName       String
+  addressLine1        String
+  addressLine2        String             @default("")
+  city                String
+  state               String
+  postcode            String
+  country             String             @default("AU")
+  currency            String             @default("AUD")
+  subtotalCents       Int
+  discountCents       Int
+  shippingCents       Int
+  totalCents          Int
+  recordedRefundCents Int                @default(0)
+  paymentStatus       PaymentStatus      @default(PENDING)
+  fulfillmentStatus   FulfillmentStatus  @default(UNFULFILLED)
+  carrier             String             @default("")
+  trackingNumber      String             @default("")
+  exception           String             @default("")
+  createdAt           DateTime           @default(now())
+  expiresAt           DateTime
+  paidAt              DateTime?
+  shippedAt           DateTime?
+  cancelledAt         DateTime?
+  lines               OrderLine[]
+  reservations        StockReservation[]
+  access              OrderAccess[]
+  payments            PaymentEvent[]
+  returns             OrderReturn[]
+
+  @@index([paymentStatus, expiresAt])
+  @@index([createdAt])
+}
+
+model OrderLine {
+  id                String        @id @default(cuid())
+  orderId           String
+  order             ShopOrder     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  variantId         String
+  productId         String
+  productName       String
+  sku               String
+  size              String
+  color             String
+  categoryId        String
+  categoryName      String
+  collections       Json
+  imageMediaId      String?
+  imageMedia        Media?        @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  quantity          Int
+  originalUnitCents Int
+  unitPriceCents    Int
+  discountSource    String
+  discountCents     Int
+  lineTotalCents    Int
+  returns           OrderReturn[]
+
+  @@unique([orderId, variantId])
+}
+
+model StockReservation {
+  id         String            @id @default(cuid())
+  orderId    String
+  order      ShopOrder         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  variantId  String
+  variant    ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity   Int
+  status     ReservationStatus @default(ACTIVE)
+  createdAt  DateTime          @default(now())
+  resolvedAt DateTime?
+
+  @@unique([orderId, variantId])
+}
+
+model OrderAccess {
+  id        String    @id @default(cuid())
+  orderId   String
+  order     ShopOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+}
+
+model PaymentEvent {
+  id        String    @id @default(cuid())
+  orderId   String
+  order     ShopOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  eventId   String    @unique
+  outcome   String
+  result    String
+  createdAt DateTime  @default(now())
+}
+
+model OrderReturn {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       ShopOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  lineId      String
+  line        OrderLine @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  sellable    Int
+  unavailable Int
+  reason      String
+  actorId     String
+  createdAt   DateTime  @default(now())
+}
+
+model NotificationRuleSettings {
+  installedAt          DateTime  @default(now())
+  id                   String    @id @default("notifications")
+  version              Int       @default(1)
+  beijingThreshold     Int?
+  melbourneThreshold   Int?
+  productEnabled       Boolean   @default(false)
+  productNewDefault    Boolean   @default(false)
+  productExistingSince DateTime?
+  overdueGraceDays     Int       @default(0)
+  autoPinOutOfStock    Boolean   @default(false)
+  routing              Json      @default("{}")
+  updatedAt            DateTime  @updatedAt
+}
+
+model StockAlertPolicy {
+  variantId String
+  warehouse WarehouseCode
+  mode      String        @default("INHERIT")
+  threshold Int?
+  updatedAt DateTime      @updatedAt
+
+  @@id([variantId, warehouse])
+}
+
+model ProductCheckPolicy {
+  productId String   @id
+  mode      String   @default("INHERIT")
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationPreference {
+  userId   String @id
+  timezone String @default("Australia/Melbourne")
+}
+
+model Notification {
+  id              String                 @id @default(cuid())
+  issueKey        String
+  cycle           Int
+  type            String
+  severity        Int
+  title           String
+  reason          String
+  action          String
+  objectType      String
+  objectId        String
+  warehouse       WarehouseCode?
+  status          String                 @default("OPEN")
+  actionable      Boolean                @default(true)
+  conditionActive Boolean                @default(true)
+  pinned          Boolean                @default(false)
+  systemPin       Boolean                @default(false)
+  pinReason       String                 @default("")
+  assigneeId      String?
+  recipientIds    String[]
+  confirmerIds    String[]
+  initiatorId     String                 @default("system")
+  version         Int                    @default(1)
+  fingerprint     String
+  rule            String
+  ruleVersion     Int
+  ruleSnapshot    Json
+  snapshot        Json
+  currentData     Json
+  occurredAt      DateTime
+  deadlineAt      DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  revisions       NotificationRevision[]
+  receipts        NotificationReceipt[]
+  history         NotificationHistory[]
+
+  @@unique([issueKey, cycle])
+  @@index([createdAt, id])
+  @@index([status, actionable])
+  @@index([assigneeId, status])
+}
+
+model NotificationRevision {
+  id             String       @id @default(cuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  version        Int
+  snapshot       Json
+  confirmerIds   String[]
+  reason         String
+  createdAt      DateTime     @default(now())
+
+  @@unique([notificationId, version])
+}
+
+model NotificationReceipt {
+  id             String       @id @default(cuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  userId         String
+  version        Int
+  kind           String
+  createdAt      DateTime     @default(now())
+
+  @@unique([notificationId, userId, version, kind])
+}
+
+model NotificationHistory {
+  id             String       @id @default(cuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  actorId        String
+  action         String
+  reason         String
+  data           Json
+  createdAt      DateTime     @default(now())
+
+  @@index([notificationId, createdAt])
+}
+
+model NotificationJob {
+  id            String    @id @default("notifications")
+  requested     BigInt    @default(1)
+  completed     BigInt    @default(0)
+  lastStartedAt DateTime?
+  lastSuccessAt DateTime?
+  lastErrorAt   DateTime?
+  lastError     String?
+  attempts      Int       @default(0)
+}
+
+model NotificationJobRun {
+  id         String   @id @default(cuid())
+  startedAt  DateTime
+  finishedAt DateTime @default(now())
+  success    Boolean
+  error      String?
+  checked    Int      @default(0)
+}
+
+model BusinessGrant {
+  userId     String
+  capability String
+  grantedBy  String
+  createdAt  DateTime @default(now())
+
+  @@id([userId, capability])
+}
+
+model Supplier {
+  id             String        @id @default(cuid())
+  code           String        @unique
+  name           String
+  contact        String        @default("")
+  contactDetails String        @default("")
+  website        String        @default("")
+  currency       String        @default("CNY")
+  notes          String        @default("")
+  archived       Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  sources        SupplierSku[]
+  purchases      Purchase[]
+}
+
+model SupplierSku {
+  id           String   @id @default(cuid())
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  variantId    String
+  supplierCode String
+  url          String   @default("")
+  notes        String   @default("")
+
+  @@unique([supplierId, variantId, supplierCode])
+  @@index([variantId])
+}
+
+model Purchase {
+  id               String            @id @default(cuid())
+  number           String            @unique
+  supplierId       String
+  supplier         Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierSnapshot Json
+  createdBy        String
+  assigneeId       String
+  warehouse        WarehouseCode     @default(BEIJING)
+  status           String            @default("DRAFT")
+  version          Int               @default(1)
+  orderedAt        DateTime
+  etaStart         DateTime?         @db.Date
+  etaEnd           DateTime?         @db.Date
+  currency         String
+  subtotal         Int
+  discount         Int               @default(0)
+  domesticShipping Int               @default(0)
+  otherFees        Int               @default(0)
+  total            Int
+  notes            String            @default("")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  lines            PurchaseLine[]
+  receipts         PurchaseReceipt[]
+  returns          SupplierReturn[]
+  expense          Expense?
+  parcels          Parcel[]
+
+  @@index([status, etaEnd])
+  @@index([supplierId, orderedAt])
+}
+
+model PurchaseLine {
+  id                  String                @id @default(cuid())
+  purchaseId          String
+  purchase            Purchase              @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  variantId           String
+  snapshot            Json
+  supplierCode        String                @default("")
+  quantity            Int
+  unitCost            Int
+  replacementQty      Int                   @default(0)
+  receivedSellable    Int                   @default(0)
+  receivedUnavailable Int                   @default(0)
+  cancelledQty        Int                   @default(0)
+  shortClosedQty      Int                   @default(0)
+  returnedQty         Int                   @default(0)
+  receiptLines        PurchaseReceiptLine[]
+  returnLines         SupplierReturnLine[]
+  parcelLines         ParcelLine[]
+
+  @@unique([purchaseId, variantId])
+}
+
+model PurchaseReceipt {
+  id         String                @id @default(cuid())
+  purchaseId String
+  purchase   Purchase              @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  parcelId   String?
+  parcel     Parcel?               @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  reference  String
+  actorId    String
+  occurredAt DateTime
+  createdAt  DateTime              @default(now())
+  reason     String
+  notes      String                @default("")
+  lines      PurchaseReceiptLine[]
+
+  @@unique([purchaseId, reference])
+}
+
+model PurchaseReceiptLine {
+  id          String          @id @default(cuid())
+  receiptId   String
+  receipt     PurchaseReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  lineId      String
+  line        PurchaseLine    @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  sellable    Int
+  unavailable Int
+
+  @@unique([receiptId, lineId])
+}
+
+model SupplierReturn {
+  id          String               @id @default(cuid())
+  purchaseId  String
+  purchase    Purchase             @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  actorId     String
+  reference   String
+  occurredAt  DateTime
+  createdAt   DateTime             @default(now())
+  disposition String
+  reason      String
+  lines       SupplierReturnLine[]
+
+  @@unique([purchaseId, reference])
+}
+
+model SupplierReturnLine {
+  id          String         @id @default(cuid())
+  returnId    String
+  return      SupplierReturn @relation(fields: [returnId], references: [id], onDelete: Restrict)
+  lineId      String
+  line        PurchaseLine   @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  sellable    Int
+  unavailable Int
+
+  @@unique([returnId, lineId])
+}
+
+model ExpenseCategory {
+  id       String    @id
+  name     String
+  active   Boolean   @default(true)
+  expenses Expense[]
+}
+
+model Expense {
+  id                 String            @id @default(cuid())
+  number             String            @unique
+  title              String
+  categoryId         String
+  category           ExpenseCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  purpose            String
+  payee              String
+  supplierId         String?
+  createdBy          String
+  assigneeId         String
+  plannedAt          DateTime          @db.Date
+  dueAt              DateTime          @db.Date
+  timezone           String            @default("Asia/Shanghai")
+  currency           String
+  amount             Int
+  rateMicros         Int?
+  rateDate           DateTime?         @db.Date
+  rateSource         String            @default("")
+  reportCurrency     String            @default("AUD")
+  reportAmount       Int?
+  accountAlias       String            @default("")
+  channel            String            @default("")
+  expectedResult     String
+  resultDueAt        DateTime          @db.Date
+  verificationMethod String
+  resultStatus       String            @default("PENDING")
+  resultEvidence     String            @default("")
+  resultConfirmedAt  DateTime?
+  status             String            @default("OPEN")
+  paymentMode        String            @default("MANUAL")
+  tolerance          Int               @default(0)
+  graceDays          Int               @default(0)
+  reminderDays       Int               @default(7)
+  expectedRefund     Int               @default(0)
+  refundDueAt        DateTime?         @db.Date
+  notes              String            @default("")
+  version            Int               @default(1)
+  purchaseId         String?           @unique
+  purchase           Purchase?         @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  recurringId        String?
+  recurring          RecurringExpense? @relation(fields: [recurringId], references: [id], onDelete: Restrict)
+  cycle              String?
+  source             String            @default("MANUAL")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  cash               CashRecord[]
+  links              ExpenseLink[]
+
+  @@unique([recurringId, cycle])
+  @@index([status, dueAt])
+  @@index([categoryId, currency])
+  @@index([supplierId])
+}
+
+model CashRecord {
+  id           String      @id @default(cuid())
+  expenseId    String
+  expense      Expense     @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  kind         String
+  status       String      @default("CONFIRMED")
+  amount       Int
+  currency     String
+  occurredAt   DateTime
+  createdAt    DateTime    @default(now())
+  actorId      String
+  source       String
+  accountAlias String
+  channel      String
+  reference    String
+  reason       String
+  rateMicros   Int?
+  rateDate     DateTime?   @db.Date
+  rateSource   String      @default("")
+  reportAmount Int?
+  correctionOf String?     @unique
+  correction   CashRecord? @relation("CashCorrection", fields: [correctionOf], references: [id], onDelete: Restrict)
+  correctedBy  CashRecord? @relation("CashCorrection")
+
+  @@unique([expenseId, reference, kind])
+  @@index([occurredAt, currency])
+}
+
+model ExpenseLink {
+  id         String  @id @default(cuid())
+  expenseId  String
+  expense    Expense @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  objectType String
+  objectId   String
+  meaning    String  @default("INDEPENDENT_FEE")
+
+  @@unique([expenseId, objectType, objectId])
+  @@index([objectType, objectId])
+}
+
+model RecurringExpense {
+  id                 String    @id @default(cuid())
+  name               String
+  payee              String
+  categoryId         String
+  assigneeId         String
+  createdBy          String
+  currency           String
+  amount             Int
+  unit               String
+  interval           Int
+  anchorDate         DateTime  @db.Date
+  nextIndex          Int       @default(0)
+  endDate            DateTime? @db.Date
+  timezone           String
+  reminderDays       Int       @default(7)
+  graceDays          Int       @default(0)
+  paymentMode        String
+  expectedResult     String
+  verificationMethod String
+  accountAlias       String    @default("")
+  channel            String    @default("")
+  tolerance          Int       @default(0)
+  status             String    @default("ACTIVE")
+  version            Int       @default(1)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  expenses           Expense[]
+}
+
+model Parcel {
+  id               String            @id @default(cuid())
+  number           String            @unique
+  type             String
+  purchaseId       String?
+  purchase         Purchase?         @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  transferId       String?
+  orderId          String?
+  returnId         String?
+  assigneeId       String
+  sourcePlace      String
+  destinationPlace String
+  warehouse        WarehouseCode?
+  timezone         String
+  sender           String
+  recipient        String
+  carrier          String            @default("")
+  trackingNumber   String            @default("")
+  packageCount     Int               @default(1)
+  weightGrams      Int?
+  dispatchedAt     DateTime?
+  etaStart         DateTime?         @db.Date
+  etaEnd           DateTime?         @db.Date
+  signedAt         DateTime?
+  transportStatus  String            @default("PREPARING")
+  exception        String            @default("")
+  notes            String            @default("")
+  createdBy        String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  lines            ParcelLine[]
+  events           ParcelEvent[]
+  receipts         PurchaseReceipt[]
+
+  @@index([carrier, trackingNumber])
+  @@index([type, transportStatus, etaEnd])
+  @@index([transferId])
+  @@index([orderId])
+}
+
+model ParcelLine {
+  id             String        @id @default(cuid())
+  parcelId       String
+  parcel         Parcel        @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  purchaseLineId String?
+  purchaseLine   PurchaseLine? @relation(fields: [purchaseLineId], references: [id], onDelete: Restrict)
+  variantId      String
+  quantity       Int
+
+  @@unique([parcelId, variantId])
+}
+
+model ParcelEvent {
+  id         String   @id @default(cuid())
+  parcelId   String
+  parcel     Parcel   @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  reference  String
+  event      String
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+  actorId    String
+  source     String
+  reason     String
+  before     Json
+  after      Json
+
+  @@unique([parcelId, source, reference])
+}
+
+model BusinessAttachment {
+  id           String   @id @default(cuid())
+  objectType   String
+  objectId     String
+  key          String   @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+
+  @@index([objectType, objectId])
+}

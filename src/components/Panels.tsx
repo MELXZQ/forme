@@ -1,15 +1,32 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "./StoreProvider";
-import { getProducts, money } from "@/lib/catalog";
-import { categories } from "@/data/categories";
+import { money } from "@/lib/format";
+import type { Category } from "@/lib/types";
 import { navigation } from "@/data/brand";
 import { Icon } from "./Icon";
 import { Asset } from "./Asset";
 import s from "./Site.module.css";
-export function Panels() {
+type BagProduct = {
+  id: string;
+  productId: string;
+  name: string;
+  slug: string;
+  image: { src: string; alt: string };
+  variantId: string;
+  option: string;
+  priceCents: number;
+  stock: number;
+};
+export function Panels({
+  categories,
+  operations = false,
+}: {
+  categories: Category[];
+  operations?: boolean;
+}) {
   const { panel, setPanel, bag, change, clear } = useStore();
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -34,10 +51,51 @@ export function Panels() {
       };
     }
   }, [panel]);
-  const products = getProducts();
+  const [lookup, setLookup] = useState<{
+    key: string;
+    items: BagProduct[];
+    error: string;
+  }>({ key: "", items: [], error: "" });
+  const ids = bag.map((item) => item.id).join(",");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const channel = new BroadcastChannel("forme-catalog");
+    channel.onmessage = () => setRefreshVersion((v) => v + 1);
+    return () => channel.close();
+  }, []);
+  useEffect(() => {
+    if (panel !== "bag") return;
+    const controller = new AbortController();
+    fetch(`/api/catalog/bag?ids=${encodeURIComponent(ids)}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error(
+            "Could not update your bag. Please try reopening it.",
+          );
+        return response.json();
+      })
+      .then((body) => setLookup({ key: ids, items: body.data, error: "" }))
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          setLookup({
+            key: ids,
+            items: [],
+            error: error instanceof Error ? error.message : "Bag unavailable.",
+          });
+      });
+    return () => controller.abort();
+  }, [panel, ids, refreshVersion]);
+  const loading = lookup.key !== ids;
+  const products = lookup.items;
   const lines = bag.flatMap((item) => {
     const product = products.find((p) => p.id === item.id);
-    return product ? [{ ...item, product }] : [];
+    return product
+      ? [{ ...item, product: { ...product, images: [product.image] } }]
+      : [];
   });
   return (
     <dialog
@@ -88,7 +146,7 @@ export function Panels() {
           {categories.map((c) => (
             <Link
               key={c.id}
-              href={`/shop?category=${c.id}`}
+              href={`/shop?category=${c.slug}`}
               onClick={() => setPanel(null)}
             >
               {c.name}
@@ -128,7 +186,7 @@ export function Panels() {
           <p className={s.eyebrow}>A GOOD PLACE TO START</p>
           <div className={s.searchSuggestions}>
             {categories.map((c) => (
-              <Link key={c.id} href={`/shop?category=${c.id}`}>
+              <Link key={c.id} href={`/shop?category=${c.slug}`}>
                 {c.short}
                 <Icon name="arrow" size={16} />
               </Link>
@@ -139,9 +197,25 @@ export function Panels() {
       {panel === "bag" && (
         <>
           <p className={s.demoNote}>
-            Demo bag · saved on this device · no checkout
+            {operations
+              ? "Saved on this device · Stock is reserved only at checkout"
+              : "Demo bag · saved on this device · no checkout"}
           </p>
-          {lines.length === 0 ? (
+          {lookup.error && (
+            <p role="alert" className={s.muted}>
+              {lookup.error}
+            </p>
+          )}
+          {bag.length > lines.length && !loading && (
+            <p className={s.muted}>
+              {operations
+                ? "Some saved pieces are no longer available. Review your bag before checkout."
+                : "Some saved pieces are no longer available. The bag is a demo and does not reserve stock."}
+            </p>
+          )}
+          {loading ? (
+            <p role="status">Updating bag…</p>
+          ) : lines.length === 0 ? (
             <div className={s.emptyState}>
               <Icon name="bag" size={42} />
               <h3>A little space for self-expression.</h3>
@@ -153,6 +227,11 @@ export function Panels() {
               >
                 Explore jewellery <Icon name="arrow" size={16} />
               </Link>
+              {bag.length > 0 && (
+                <button className={s.textButton} onClick={clear}>
+                  Clear unavailable items
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -164,7 +243,10 @@ export function Panels() {
                     </Link>
                     <div>
                       <Link href={`/products/${p.slug}`}>{p.name}</Link>
-                      <p>{money(p.price)} AUD</p>
+                      <p>
+                        {money(p.priceCents)} AUD · {p.option}
+                        {p.stock === 0 ? " · out of stock" : ""}
+                      </p>
                       <div className={s.quantity}>
                         <button
                           aria-label={`Remove one ${p.name}`}
@@ -176,7 +258,7 @@ export function Panels() {
                         <button
                           aria-label={`Add one ${p.name}`}
                           onClick={() => change(p.id, 1)}
-                          disabled={quantity >= 99}
+                          disabled={quantity >= Math.min(99, p.stock)}
                         >
                           <Icon name="plus" size={14} />
                         </button>
@@ -189,14 +271,37 @@ export function Panels() {
                 <span>Subtotal</span>
                 <strong>
                   {money(
-                    lines.reduce((n, p) => n + p.product.price * p.quantity, 0),
+                    lines.reduce(
+                      (n, p) => n + p.product.priceCents * p.quantity,
+                      0,
+                    ),
                   )}{" "}
                   AUD
                 </strong>
               </div>
               <p className={s.muted}>
-                This is a preview. No payment or order will be processed.
+                {operations
+                  ? "Local checkout only. No real money is charged."
+                  : "This is a preview. No payment or order will be processed."}
               </p>
+              {operations &&
+                (bag.length === lines.length &&
+                lines.every(
+                  (l) => l.quantity <= l.product.stock && l.product.stock > 0,
+                ) ? (
+                  <Link
+                    className={s.darkButton}
+                    href="/checkout"
+                    onClick={() => setPanel(null)}
+                  >
+                    Continue to local checkout
+                  </Link>
+                ) : (
+                  <p role="alert" className={s.muted}>
+                    Adjust quantities to current Melbourne stock before
+                    checkout.
+                  </p>
+                ))}
               <button className={s.textButton} onClick={clear}>
                 Clear bag
               </button>

@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { slides } from "@/data/slides";
+import type { Slide } from "@/lib/types";
 import { Asset } from "./Asset";
 import { Icon } from "./Icon";
 import s from "./Site.module.css";
-export function Carousel() {
+export function Carousel({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hover, setHover] = useState(false);
@@ -25,7 +25,8 @@ export function Carousel() {
       document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
-  const running = !paused && !hover && !focused && !reduced && !hidden;
+  const running =
+    slides.length > 1 && !paused && !hover && !focused && !reduced && !hidden;
   useEffect(() => {
     if (!running) return;
     const timer = setInterval(
@@ -33,9 +34,11 @@ export function Carousel() {
       5500,
     );
     return () => clearInterval(timer);
-  }, [running, index]);
+  }, [running, index, slides.length]);
   const next = (delta: number) =>
     setIndex((i) => (i + delta + slides.length) % slides.length);
+  const activeIndex = Math.min(index, slides.length - 1);
+  if (!slides.length) return null;
   return (
     <section
       className={s.hero}
@@ -64,7 +67,7 @@ export function Carousel() {
         {slides.map((slide, i) => (
           <article
             key={slide.id}
-            className={`${s.heroSlide} ${i === index ? s.activeSlide : ""}`}
+            className={`${s.heroSlide} ${i === activeIndex ? s.activeSlide : ""}`}
             aria-hidden={i !== index}
             inert={i !== index}
             aria-roledescription="slide"
@@ -107,14 +110,14 @@ export function Carousel() {
             <button
               key={slide.id}
               aria-label={`Show slide ${i + 1}`}
-              aria-current={i === index ? "true" : undefined}
+              aria-current={i === activeIndex ? "true" : undefined}
               onClick={() => setIndex(i)}
             >
               <span />
             </button>
           ))}
           <span className={s.slideNumber}>
-            0{index + 1} / 0{slides.length}
+            0{activeIndex + 1} / 0{slides.length}
           </span>
         </div>
         <div className={s.controlGroup}>
@@ -147,7 +150,7 @@ export function Carousel() {
         </div>
       </div>
       <div className="sr-only" aria-live={running ? "off" : "polite"}>
-        Slide {index + 1}: {slides[index].title.replace("\n", " ")}
+        Slide {activeIndex + 1}: {slides[activeIndex].title.replace("\n", " ")}
       </div>
     </section>
   );

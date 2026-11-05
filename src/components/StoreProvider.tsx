@@ -4,7 +4,7 @@ type BagItem = { id: string; quantity: number };
 type Store = {
   bag: BagItem[];
   ready: boolean;
-  add: (id: string) => void;
+  add: (id: string, limit?: number) => void;
   change: (id: string, delta: number) => void;
   clear: () => void;
   panel: "search" | "bag" | "menu" | null;
@@ -65,11 +65,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         )
         .filter((p) => p.quantity > 0),
     );
-  const add = (id: string) => {
+  const add = (id: string, limit = 99) => {
+    if(limit<1)return;
     setBag((items) =>
       items.some((p) => p.id === id)
         ? items.map((p) =>
-            p.id === id ? { ...p, quantity: Math.min(99, p.quantity + 1) } : p,
+            p.id === id ? { ...p, quantity: Math.min(99, limit, p.quantity + 1) } : p,
           )
         : [...items, { id, quantity: 1 }],
     );

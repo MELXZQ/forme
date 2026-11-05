@@ -1,4 +1,20 @@
-import type { Product, CategoryId } from "@/lib/types";
+import type { CategoryId } from "@/lib/types";
+// Legacy fixtures are used only by the idempotent database seed.
+type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  category: CategoryId;
+  price: number;
+  compareAtPrice?: number;
+  currency: "AUD";
+  images: { src: string; alt: string }[];
+  isNew: boolean;
+  isOnSale: boolean;
+  collectionIds: string[];
+  releasedAt: string;
+  description: string;
+};
 const entries: [
   string,
   string,

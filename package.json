@@ -3,32 +3,66 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
+    "dev": "next dev --hostname 127.0.0.1 --port 3000",
     "build": "next build",
-    "start": "next start --hostname 127.0.0.1",
+    "start": "next start --hostname 127.0.0.1 --port 3000",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
     "assets": "node scripts/generate-assets.mjs",
     "format": "prettier --write .",
-    "verify:routes": "node --import tsx scripts/check-routes.ts"
+    "verify:routes": "node --import tsx scripts/check-routes.ts",
+    "db:start": "node scripts/db.mjs start",
+    "db:stop": "node scripts/db.mjs stop",
+    "db:status": "node scripts/db.mjs status",
+    "db:setup": "node scripts/setup-db.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:dev": "prisma migrate dev",
+    "db:seed": "node --conditions=react-server --import tsx prisma/seed.ts",
+    "admin:create": "node --conditions=react-server --import tsx scripts/create-admin.ts",
+    "test:integration": "node --conditions=react-server --import tsx scripts/integration.ts",
+    "db:backup": "node scripts/backup.mjs",
+    "verify:restart": "node --conditions=react-server --import tsx scripts/operations/restart.ts",
+    "orders:expire": "node --conditions=react-server --import tsx scripts/operations/expire.ts",
+    "orders:worker": "node --conditions=react-server --import tsx scripts/operations/expire.ts --watch",
+    "test:operations": "node --conditions=react-server --import tsx scripts/operations/test.mjs",
+    "dev:test": "node scripts/operations/dev-test-server.mjs",
+    "notifications:check": "node --conditions=react-server --import tsx scripts/notifications/check.ts",
+    "notifications:worker": "node --conditions=react-server --import tsx scripts/operations/expire.ts --watch",
+    "test:notifications": "npm run test:operations && node --conditions=react-server --import tsx scripts/notifications/test.ts && node --conditions=react-server --import tsx scripts/notifications/suggestions.ts",
+    "test:notifications:http": "node scripts/notifications/http.mjs",
+    "test:business": "npm run test:notifications && node --conditions=react-server --import tsx scripts/business/test.ts && node --conditions=react-server --import tsx scripts/business/edge-cases.ts",
+    "test:business:http": "node scripts/business/http.mjs",
+    "verify:business:restart": "node --conditions=react-server --import tsx scripts/business/restart.ts"
   },
   "engines": {
     "node": ">=24 <25"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "better-auth": "^1.7.17",
+    "dotenv": "^18.0.9",
     "next": "16.4.5",
+    "pg": "^8.23.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@inquirer/prompts": "^8.7.5",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.4.5",
-    "typescript": "^5.9.0",
+    "prettier": "^3.6.0",
+    "prisma": "^7.10.1",
     "tsx": "^4.20.0",
-    "prettier": "^3.6.0"
+    "typescript": "^5.9.0"
   }
 }

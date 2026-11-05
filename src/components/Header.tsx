@@ -2,11 +2,11 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { brand, navigation } from "@/data/brand";
-import { categories } from "@/data/categories";
+import type { Category } from "@/lib/types";
 import { useStore } from "./StoreProvider";
 import { Icon } from "./Icon";
 import s from "./Site.module.css";
-export function Header() {
+export function Header({ categories }: { categories: Category[] }) {
   const { bag, setPanel } = useStore();
   const shop = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -64,7 +64,7 @@ export function Header() {
             {categories.map((c) => (
               <Link
                 key={c.id}
-                href={`/shop?category=${c.id}`}
+                href={`/shop?category=${c.slug}`}
                 onClick={() => {
                   if (shop.current) shop.current.open = false;
                 }}

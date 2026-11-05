@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Product } from "@/lib/types";
-import { money, discount } from "@/lib/catalog";
+import { money, discount } from "@/lib/format";
 import { Asset } from "./Asset";
 import { Icon } from "./Icon";
+import { availabilityLabel } from "@/lib/availability";
 import s from "./Site.module.css";
 export function ProductCard({
   product: p,
@@ -27,6 +28,8 @@ export function ProductCard({
         />
         {sale && discount(p) > 0 ? (
           <span className={s.saleBadge}>−{discount(p)}%</span>
+        ) : sale && p.isOnSale ? (
+          <span className={s.saleBadge}>SELECT OPTIONS</span>
         ) : p.isNew ? (
           <span className={s.newBadge}>NEW</span>
         ) : null}
@@ -39,12 +42,18 @@ export function ProductCard({
           <Link href={`/products/${p.slug}`}>{p.name}</Link>
         </h3>
         <p>
-          <span>{money(p.price)}</span>
-          {p.compareAtPrice && p.compareAtPrice > p.price && (
-            <del>{money(p.compareAtPrice)}</del>
+          <span>
+            {p.fromPrice ? "From " : ""}
+            {money(p.priceCents)}
+          </span>
+          {p.compareAtPriceCents && p.compareAtPriceCents > p.priceCents && (
+            <del>{money(p.compareAtPriceCents)}</del>
           )}
           <span className={s.priceCurrency}> AUD</span>
         </p>
+        {p.availability && (
+          <small className={s.muted}>{availabilityLabel(p.availability)}</small>
+        )}
       </div>
     </article>
   );

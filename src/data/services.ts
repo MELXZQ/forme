@@ -85,7 +85,7 @@ export const services = [
     intro: "This concept store uses browser-local storage.",
     paragraphs: [
       "The demonstration bag is stored in localStorage on your device. You can clear it using the “Clear bag” button or your browser’s site-data controls.",
-      "No analytics, account system or payment collection is configured. A complete privacy policy will be required before the commercial store launches.",
+      "No analytics, customer account system or payment collection is configured. Administrator accounts are stored in the local database. A complete privacy policy will be required before the commercial store launches.",
     ],
   },
   {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getProducts, getCategories, getCollections } from "@/lib/catalog";
+import { listProducts, getCategories, getCollections } from "@/lib/catalog";
 import type { ShopQuery } from "@/lib/types";
 import { ProductCard } from "@/components/ProductCard";
 import { Icon } from "@/components/Icon";
@@ -14,19 +14,29 @@ export default async function Shop({
 }) {
   const params = await searchParams;
   const query: ShopQuery = {};
-  for (const key of ["q", "category", "collection", "sale", "sort"] as const) {
+  for (const key of [
+    "q",
+    "category",
+    "collection",
+    "sale",
+    "sort",
+    "page",
+  ] as const) {
     if (typeof params[key] === "string") query[key] = params[key];
   }
-  const products = getProducts(query),
-    categories = getCategories(),
-    collections = getCollections();
+  const [result, categories, collections] = await Promise.all([
+    listProducts(query),
+    getCategories(),
+    getCollections(),
+  ]);
+  const products = result.items;
   const title = query.q
     ? `Results for “${query.q}”`
     : query.category
-      ? categories.find((c) => c.id === query.category)?.short ||
+      ? categories.find((c) => c.slug === query.category)?.short ||
         "Explore jewellery"
       : query.collection
-        ? collections.find((c) => c.id === query.collection)?.name ||
+        ? collections.find((c) => c.slug === query.collection)?.name ||
           "Explore jewellery"
         : query.sale === "true"
           ? "Good finds"
@@ -54,7 +64,7 @@ export default async function Shop({
         </h1>
         <p>Considered details. Individual expression. All prices in AUD.</p>
       </div>
-      <FilterForm className={s.filters} key={JSON.stringify(query)}>
+      <FilterForm className={s.filters}>
         <div className={s.filterSearch}>
           <label htmlFor="shop-q">Search</label>
           <input
@@ -74,7 +84,7 @@ export default async function Shop({
           >
             <option value="">All jewellery</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.id} value={c.slug}>
                 {c.short}
               </option>
             ))}
@@ -89,7 +99,7 @@ export default async function Shop({
           >
             <option value="">All collections</option>
             {collections.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.id} value={c.slug}>
                 {c.name}
               </option>
             ))}
@@ -114,12 +124,12 @@ export default async function Shop({
           On sale
         </label>
         <button className={s.darkButton} type="submit">
-          Apply <Icon name="arrow" size={16} />
+          Search <Icon name="search" size={16} />
         </button>
       </FilterForm>
       <div className={s.resultBar}>
         <p aria-live="polite">
-          {products.length} {products.length === 1 ? "piece" : "pieces"}
+          {result.total} {result.total === 1 ? "piece" : "pieces"}
           {query.sale === "true" ? " · on sale" : ""}
         </p>
         {active && (
@@ -148,6 +158,25 @@ export default async function Shop({
             Clear all filters <Icon name="arrow" size={16} />
           </Link>
         </div>
+      )}
+      {result.pageCount > 1 && (
+        <nav aria-label="Product pages" className={s.pagination}>
+          {Array.from({ length: result.pageCount }, (_, index) => {
+            const values = new URLSearchParams();
+            for (const [name, value] of Object.entries(query))
+              if (value) values.set(name, value);
+            values.set("page", String(index + 1));
+            return (
+              <Link
+                key={index}
+                href={`/shop?${values.toString()}`}
+                aria-current={result.page === index + 1 ? "page" : undefined}
+              >
+                {index + 1}
+              </Link>
+            );
+          })}
+        </nav>
       )}
     </main>
   );

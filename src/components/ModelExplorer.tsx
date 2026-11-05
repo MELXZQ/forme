@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { modelScene } from "@/data/model";
-import { categories } from "@/data/categories";
+import type { ModelScene } from "@/lib/types";
+
 import { Icon } from "./Icon";
 import { Asset } from "./Asset";
 import s from "./Site.module.css";
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
-export function ModelExplorer() {
+export function ModelExplorer({ modelScene }: { modelScene: ModelScene }) {
   const section = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -58,7 +58,7 @@ export function ModelExplorer() {
       media.removeEventListener("change", update);
       observer.disconnect();
     };
-  }, []);
+  }, [modelScene]);
   return (
     <section
       ref={section}
@@ -144,7 +144,7 @@ export function ModelExplorer() {
                 section.current?.style.setProperty(`--label-${m.order}`, "1");
               }}
             >
-              <span>{categories.find((c) => c.id === m.id)?.short}</span>
+              <span>{m.name || m.id}</span>
               <small>
                 View products <Icon name="arrow" size={13} />
               </small>

@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-operations-test
 .tools
 .npm-cache
 public/images
@@ -7,3 +8,7 @@ public/icon.svg
 package-lock.json
 next-env.d.ts
 AGENTS.md
+
+src/generated
+.local
+backups

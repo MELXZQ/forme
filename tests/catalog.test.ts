@@ -1,68 +1,148 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  getProducts,
-  getNewArrivals,
-  getDeals,
-  getProduct,
-  discount,
-} from "../src/lib/catalog";
-import { modelScene } from "../src/data/model";
-import { getCategories, getCollections } from "../src/lib/catalog";
-import { access } from "node:fs/promises";
-import path from "node:path";
-
-test("catalogue uses unique stable IDs, valid categories and real local assets", async () => {
-  const all = getProducts();
-  assert.equal(new Set(all.map((p) => p.id)).size, all.length);
-  assert.equal(new Set(all.map((p) => p.slug)).size, all.length);
-  for (const p of all) {
-    assert.ok(getCategories().some((c) => c.id === p.category));
-    assert.ok(
-      p.collectionIds.every((id) => getCollections().some((c) => c.id === id)),
+  productSchema,
+  variantSchema,
+  slideSchema,
+  markerSchema,
+} from "../src/lib/validation";
+import { money, discount } from "../src/lib/format";
+import { processImage } from "../src/server/storage";
+import sharp from "sharp";
+const validVariant = {
+  sku: "QA-ONE",
+  priceCents: 8900,
+  compareAtPriceCents: 9900,
+  stock: 2,
+  currency: "AUD",
+  enabled: true,
+  sortOrder: 0,
+  size: "M",
+  color: "",
+};
+test("AUD prices use integer minor units and accurate formatting", () => {
+  assert.equal(money(8950), "$89.50");
+  assert.equal(money(8900), "$89");
+  assert.equal(discount({ priceCents: 5900, compareAtPriceCents: 7900 }), 25);
+  for (const changes of [
+    { priceCents: -1 },
+    { priceCents: 10.5 },
+    { stock: -1 },
+    { stock: 1.2 },
+    { compareAtPriceCents: 8900 },
+    { currency: "USD" },
+  ])
+    assert.equal(
+      variantSchema.safeParse({ ...validVariant, ...changes }).success,
+      false,
     );
-    assert.equal(p.currency, "AUD");
-    assert.equal(p.isOnSale, !!p.compareAtPrice && p.compareAtPrice > p.price);
-    assert.equal(getProduct(p.slug)?.id, p.id);
-    for (const image of p.images)
-      await access(path.join(process.cwd(), "public", image.src));
-  }
+  assert.equal(variantSchema.safeParse(validVariant).success, true);
 });
-test("homepage provides eight actual new arrivals and eight genuine deals", () => {
-  assert.equal(getNewArrivals().length, 8);
-  assert.ok(getNewArrivals().every((p) => p.isNew));
-  assert.equal(getDeals().length, 8);
-  assert.ok(getDeals().every((p) => p.isOnSale && p.compareAtPrice! > p.price));
-  assert.equal(discount({ price: 59, compareAtPrice: 79 }), 25);
-  assert.equal(discount({ price: 89 }), 0);
-  assert.equal(discount({ price: 90, compareAtPrice: 80 }), 0);
-});
-test("filters intersect and sorting is deterministic", () => {
-  const results = getProducts({
-    category: "rings",
-    sale: "true",
-    collection: "quiet-form",
-    sort: "price-asc",
-  });
-  assert.deepEqual(
-    results.map((p) => p.slug),
-    ["double-band", "ridge-ring"],
+test("publication requires enabled SKUs and images; duplicate SKUs are rejected", () => {
+  const draft = {
+    slug: "qa-ring",
+    name: "QA ring",
+    status: "DRAFT",
+    categoryId: "rings",
+    variants: [validVariant],
+    images: [],
+  };
+  assert.equal(productSchema.safeParse(draft).success, true);
+  assert.equal(
+    productSchema.safeParse({ ...draft, status: "PUBLISHED" }).success,
+    false,
   );
-  assert.equal(getProducts({ q: "  CHAIN  " }).length, 3);
-  assert.equal(getProducts({ q: "not-a-product" }).length, 0);
-  assert.equal(getProducts({ category: "missing" }).length, 0);
-  assert.equal(getProducts({ sort: "newest" })[0].slug, "arc-signet");
-  const sorted = getProducts({ sort: "price-desc" });
-  assert.ok(sorted.every((p, i) => i === 0 || sorted[i - 1].price >= p.price));
+  assert.equal(
+    productSchema.safeParse({
+      ...draft,
+      variants: [validVariant, validVariant],
+    }).success,
+    false,
+  );
+  assert.equal(
+    productSchema.safeParse({ ...draft, slug: "../escape" }).success,
+    false,
+  );
+  assert.equal(
+    productSchema.safeParse({
+      ...draft,
+      status: "PUBLISHED",
+      images: [{ mediaId: "test-media" }],
+    }).success,
+    true,
+  );
+  assert.equal(
+    productSchema.safeParse({
+      ...draft,
+      status: "PUBLISHED",
+      variants: [
+        { ...validVariant, id: "active-sku" },
+        { ...validVariant, id: "disabled-sku", sku: "QA-TWO", enabled: false },
+      ],
+      images: [{ mediaId: "test-media", variantId: "disabled-sku" }],
+    }).success,
+    false,
+  );
 });
-test("every model marker has independently configured mobile and desktop targets", async () => {
-  assert.equal(modelScene.markers.length, 5);
-  for (const marker of modelScene.markers) {
-    assert.ok(getCategories().some((c) => c.id === marker.id));
-    for (const placement of [marker.desktop, marker.mobile])
-      for (const v of [...placement.anchor, ...placement.label])
-        assert.ok(v >= 0 && v <= 100);
-  }
-  for (const scene of [modelScene.desktop, modelScene.mobile])
-    await access(path.join(process.cwd(), "public", scene.image));
+test("homepage links and positions are bounded and cannot inject arbitrary URLs", () => {
+  const slide = {
+    title: "New edit",
+    cta: "Shop",
+    href: "/shop?category=rings",
+    desktopMediaId: "media",
+    active: true,
+  };
+  assert.equal(slideSchema.safeParse(slide).success, true);
+  for (const href of ["javascript:alert(1)", "//example.com", "/\\example.com"])
+    assert.equal(slideSchema.safeParse({ ...slide, href }).success, false);
+  assert.equal(
+    markerSchema.safeParse({
+      categoryId: "rings",
+      sortOrder: 0,
+      active: true,
+      desktopAnchorX: 101,
+      desktopAnchorY: 50,
+      desktopLabelX: 0,
+      desktopLabelY: 50,
+      mobileAnchorX: 50,
+      mobileAnchorY: 50,
+      mobileLabelX: 0,
+      mobileLabelY: 50,
+    }).success,
+    false,
+  );
+});
+test("actual image bytes are decoded and re-encoded; SVG and MIME spoofing are rejected", async () => {
+  const bytes = await sharp({
+    create: { width: 20, height: 16, channels: 3, background: "#cd8965" },
+  })
+    .png()
+    .toBuffer();
+  const result = await processImage(
+    new File([new Uint8Array(bytes)], "photo.png", { type: "image/png" }),
+  );
+  assert.equal(result.mimeType, "image/webp");
+  assert.equal(result.width, 20);
+  assert.equal((await sharp(result.bytes).metadata()).format, "webp");
+  await assert.rejects(() =>
+    processImage(
+      new File([new Uint8Array(bytes)], "fake.jpg", { type: "image/jpeg" }),
+    ),
+  );
+  await assert.rejects(() =>
+    processImage(
+      new File(
+        [
+          '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"></svg>',
+        ],
+        "image.svg",
+        { type: "image/svg+xml" },
+      ),
+    ),
+  );
+  await assert.rejects(() =>
+    processImage(
+      new File(["not an image"], "image.png", { type: "image/png" }),
+    ),
+  );
 });

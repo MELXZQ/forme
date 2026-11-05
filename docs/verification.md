@@ -1,5 +1,12 @@
 # 实际验证记录
 
+## 2026-11-05：即时筛选调整
+
+- Category、Collection、Sort by 选择后立即更新，On sale 勾选同样即时生效；搜索保留回车与 Search 按钮。
+- 浏览器实际连续选择 rings → quiet-form → price-asc，结果依次为 Double Line Ring、Ridge Ring、Contour Band、Arc Signet Ring，无需点击提交按钮。
+- 验证清除条件后立即重选、前进、后退、刷新、搜索按钮与回车搜索；筛选控件、URL 和结果一致。
+- 保留正常页面位置；沿用之前调整的箭头内缩样式。
+
 日期：2026-11-04（Asia/Shanghai）。环境：macOS arm64，本地 Node.js 24.22.2 / npm 11.19.1 / Git 2.50.1。网站使用 Next.js 16.4.5、React 19.3.1、TypeScript 5.9.3。
 
 ## 运行检查

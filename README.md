@@ -1,125 +1,127 @@
-# FORME 男士首饰概念商店
+# FORME 本地电商、双仓库存与业务管理
 
-这是本地 Next.js + React + TypeScript 项目。页面使用英文、价格使用 AUD。品牌、16 件商品、价格和 SVG 图片都是可替换的演示内容。没有真实支付、订单、登录或数据库。
+沿用现有 Next.js 项目、前台设计、动画、路由与 Shop 即时筛选。PostgreSQL 提供真实商品、首页、双仓库存、调拨和本地访客订单数据。没有真实支付、退款、邮件、物流接口或公网部署。
 
-## 打开、启动、停止
+已确认：原有 16 个 SKU、共 160 件旧库存保留为待确认；没有自动计入北京或墨尔本。只有实际登记的墨尔本可售库存能结账。固定澳洲运费未配置时会阻止结账。
 
-最简单的方式：在 Finder 中打开本项目文件夹，双击 `Start Website.command`。它会打开 Terminal，并启动网站。保持该窗口打开，在浏览器访问：
+## 下次开机
 
-**http://127.0.0.1:3000**
+Finder 打开本目录，双击 **Start Website.command**，保持终端打开。它启动数据库、网站和每分钟一次的订单预留释放与通知检查任务。
 
-终端出现 `Ready` 表示启动成功。网站只监听本机地址，其他设备不能直接访问。
+- 商城：http://127.0.0.1:3000
+- 通知首页：http://127.0.0.1:3000/admin
+- 商品后台：http://127.0.0.1:3000/admin?catalogue=1
+- 库存与订单：http://127.0.0.1:3000/admin/operations
+- 供应商、采购、支出、循环支出与物流：http://127.0.0.1:3000/admin/business
+- 停止：Control+C 停网站和启动器的任务；随后 `npm run db:stop` 停数据库，不会删除数据。
 
-停止网站：点击运行网站的 Terminal 窗口，按 **Control + C**。重新启动或重启电脑后继续：再次双击同一个启动文件即可。不要在已有服务运行时重复启动；端口占用时 Next.js 可能改用 3001，以终端输出地址为准。
-
-用 VS Code 开发：
-
-1. 打开 VS Code，选择 **File → Open Folder…**。
-2. 选择 `/Users/hopayed/Documents/ChatGPT/Edward/forme`，点击 **Open**。
-3. 选择 **Terminal → New Terminal**。项目设置会为这个新终端配置本地 Node.js 路径。
-4. 输入 `node --version`、`npm --version`、`git --version`，分别应看到版本号。
-5. 输入 `npm run dev`。在浏览器打开终端显示的本地地址。
-
-已有的终端不会自动读取新配置；请创建一个新终端。若手工使用 macOS Terminal，可复制：
+VS Code：File → Open Folder，选择 `/Users/hopayed/Documents/ChatGPT/Edward/forme`。Terminal → New Terminal：
 
 ```sh
-cd "/Users/hopayed/Documents/ChatGPT/Edward/forme"
 export PATH="$PWD/.tools/node/bin:$PATH"
+npm run db:start
 npm run dev
 ```
 
-## 在 VS Code 查看 Git 修改
+再开一个终端保持释放与通知任务运行：
 
-项目已建立本地 Git 仓库，初始提交保存当前网站版本。打开项目后，点击左侧 **Source Control**（分支图标），或按 **Control + Shift + G**。保存文件后，修改会出现在 **Changes**；点击文件可以查看逐行差异，编辑器左侧也会显示改动标记。
+```sh
+export PATH="$PWD/.tools/node/bin:$PATH"
+npm run orders:worker
+```
 
-保存文件（Command + S）让开发预览自动更新，但不等于提交 Git。完成一项修改后，可在 Changes 文件旁点击 **+** 暂存，在消息框写明修改内容，再点击 **Commit** 保存一个版本。提交记录可在 Source Control 的 **Graph** 中查看；单个文件也可在 Explorer 下方 **Timeline** 中查看历史。
+保存代码后预览更新。左侧 Source Control 查看 Git 变更和逐行差异；保存不会自动提交 Git。按所有者要求，助手在每批开发完成并验证后默认自动 commit/push 到私有仓库 MELXZQ/forme；不会强制推送，也不会上传密钥、数据库、备份或上传凭证。不要重复启动占用3000的进程。
 
-开发服务器运行时保留该终端，需要执行其他命令可使用 **Terminal → New Terminal**。Git 不需要启动服务器也能查看改动。Git 本地版本与 GitHub 在线备份是不同的功能，目前项目使用本地版本记录。
+## 第一个所有者
 
-## 环境详情
+```sh
+npm run admin:create
+```
 
-- macOS 26.5.2 / arm64；已有 Apple Git 2.50.1 和 Command Line Tools。
-- Node.js 24.22.2 LTS，npm 11.19.1，位于 `.tools/node/`。下载自 Node.js 官方网站，已与官方 SHA-256 文件核对。
-- Next.js 16.4.5，React 19，TypeScript 5.9；准确依赖版本见 `package-lock.json`。
-- 项目专用 VS Code 终端设置、TypeScript 路径和 ESLint 保存修复设置。
-- VS Code 扩展推荐列表中提供 ESLint 与 Prettier；扩展不影响网站运行。
+在本地填写邮箱、名称和隐藏密码（12–128字符），不要在聊天发送密码。没有默认密码或公开注册。已有账号重置需本地确认，撤销旧会话并保留已有角色和停用状态。新账号是 Owner。正式数据库不使用测试账号。
 
-没有修改系统 Node.js、全局 npm 包或 shell 启动文件。无需 Homebrew、Python、Docker 或数据库。将来若要在别的电脑运行，安装 Node.js 24 LTS 后执行 `npm ci` 即可；`.tools/node` 中的本地运行环境专用于当前 Apple Silicon Mac。
+后台 **Inventory / Orders** 进入运营页面；**Accounts** 为朋友创建个人 Melbourne warehouse 账号；**Catalogue** 返回商品和首页管理。
 
-JavaScript 是语言；TypeScript 增加类型检查，构建时转换为 JavaScript；Node.js 是浏览器之外的 JavaScript 运行环境。TypeScript 已在项目依赖中，无需额外全局安装。
+## 使用文档
 
-## 已实现
+- [采购、支出与物流操作手册](docs/business-manual.md)：实际按钮、分批收付/验收、退供应商、循环规则、私有凭证和任务。
+- [第二批技术说明](docs/business-technical.md)：模型、金额口径、状态、并发、权限及未来接入。
+- [第二批验证记录](docs/business-verification.md)：隔离测试、HTTP、界面及重启结果。
+- [通知中心操作手册](docs/notifications-manual.md)：今天/历史/置顶、多人确认、两仓阈值、商品资料和物流异常的完整例子。
+- [通知技术与验证记录](docs/notifications-verification.md)：迁移、可靠任务、测试结果和本地限制。
 
-- 响应式主页：导航 → 轮播 → New Arrivals → Deals（页面标题为 Good finds）→ 人物分类 → 两个系列 → 选购帮助 → 服务与页脚。
-- 3 张轮播，5.5 秒自动切换、上一张/下一张、分页、暂停、悬停和键盘焦点暂停、触摸横向滑动。页面进入后台时也暂停。
-- 8 件新品、8 件折扣商品的独立横向轨道、桌面箭头、原生触摸滚动、轨道末尾与标题 View all。
-- sticky 人物场景：滚动控制背景、上移、标签透明度；向上可反向恢复，没有滚轮拦截。手机使用独立人物构图和坐标。
-- `/shop` 支持搜索、品类、系列、优惠筛选，以及最新、价格升降序。状态保存在 URL，Apply 后生效，可刷新、前进和后退。
-- 16 个真实可访问的基础详情页、演示购物袋、数量修改、小计、清空和 localStorage 保存。
-- 尺码、长度、护理、配送、退换、联系、FAQ、隐私与条款页面。未提供的商业政策明确标注待补充。
-- 原生 dialog 管理焦点与 Escape 关闭；提供键盘焦点、跳过导航、图片回退、加载、空结果和 404。
-- `prefers-reduced-motion` 下停止自动轮播，人物与全部标签直接展示，不需要额外滚动动画。
+- [后台操作手册](docs/operations-manual.md)：你和朋友分别如何入库、调拨、部分收货、盘点、查询、发货及登记退货。
+- [技术与安全说明](docs/operations-technical.md)：模型、库存规则、事务/幂等、权限、环境、限制和公网前清单。
+- [本阶段验证记录](docs/operations-verification.md)：实际通过与尚未验证的项目。
+- [前阶段记录](docs/backend-verification.md)：仅为商品内容管理阶段历史。
 
-## 内容和图片在哪改
+## 环境与数据
 
-| 需求                                                    | 文件                             |
-| ------------------------------------------------------- | -------------------------------- |
-| 品牌、Logo 文字、导航、社交链接                         | `src/data/brand.ts`              |
-| 商品名称、AUD 价格、品类、新品/促销标记、图片、系列归属 | `src/data/products.ts`           |
-| 分类 ID 和展示名称                                      | `src/data/categories.ts`         |
-| 轮播图、桌面/手机裁切位置、文案和链接                   | `src/data/slides.ts`             |
-| 系列主图和介绍                                          | `src/data/collections.ts`        |
-| 人物、替代文本、桌面/手机锚点及标签坐标、出现顺序       | `src/data/model.ts`              |
-| 帮助、服务与待补充政策                                  | `src/data/services.ts`           |
-| 统一数据读取与筛选边界                                  | `src/lib/catalog.ts`             |
-| 数据类型                                                | `src/lib/types.ts`               |
-| 颜色、字体、间距、导航高度                              | `src/app/globals.css`            |
-| 各组件样式与响应式布局                                  | `src/components/Site.module.css` |
-| 所有本地插画                                            | `public/images/`                 |
+Node24.22.2 / npm11.19.1，Next16.4.5 / React19.3.1 / TypeScript5.9.3，PostgreSQL17.11，Prisma7.10.1，Better Auth1.7.17。本阶段保留已有版本，精确依赖见 package-lock.json。采用成熟密码哈希、数据库会话和本地 Sharp 图片处理。
 
-图片路径使用 `/images/文件名`，对应项目里的 `public/images/文件名`。商品图片建议统一 1:1，系列图约 900×620，轮播图约 1000×650。替换为本地 JPG、PNG 或 WebP 后更新数据路径和替代文本即可。组件预留宽高，图片失败时使用 `fallback.svg`。外部图片并非运行条件。
+已安装私有 Node 在 .tools/node；PostgreSQL 使用现有 Homebrew17。缺少依赖时 `npm ci`。仅初次缺少本地配置时执行 `npm run db:setup`，生成随机凭据；不要覆盖已有 .env.local。
 
-`scripts/generate-assets.mjs` 可重新生成占位 SVG。**更换真实图片后不必再运行 `npm run assets`**，以免重新覆盖同名占位图。
+```sh
+npm run db:start
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
 
-未来接数据库时优先替换 `src/lib/catalog.ts` 的读取函数，保留 `Product` 类型、稳定 ID 和 URL 筛选约定；服务端读取可改成异步，并将购物袋所需的商品摘要通过属性传入客户端，避免客户端导入数据库代码。
+迁移保留历史（当前7份），seed 按稳定标识补齐，不重置仓库余额。第二批业务迁移已在本机应用，无新增必填环境变量。不要执行 migrate reset 或删除数据库目录。
 
-## 调整人物与标签
+| 环境变量 | 用途 |
+|---|---|
+| DATABASE_URL | forme_app 日常最小权限连接 |
+| DIRECT_URL | forme_migrator 迁移连接 |
+| SHADOW_DATABASE_URL | 开发迁移专用影子库 |
+| BETTER_AUTH_SECRET / BETTER_AUTH_URL | 私有认证密钥 / 本机3000来源 |
+| STORAGE_DIR | 本地上传目录，默认 .local/uploads |
+| POSTGRES_BIN | 已有 PostgreSQL17 安装路径 |
+| ENABLE_OPERATIONS | 运营接口与结账开关；关闭不会恢复旧库存 |
+| ENABLE_DEV_PAYMENTS | Owner 开发模拟付款；production 始终拒绝 |
 
-人物素材与动画逻辑分离：素材和坐标在 `src/data/model.ts`，滚动控制在 `src/components/ModelExplorer.tsx`。
+真实变量在忽略的 .env.local，示例见 .env.example。不要提交或打印连接凭据。数据库文件 .local/postgres/data，端口55432，仅本机；图片 .local/uploads，私有业务凭证在其 .private-business 子目录，原有素材 public/assets。
 
-当前桌面画布为 1000×760，手机为 500×760。替换人物时尽量沿用相应比例，或同步修改 `.modelCanvas` 的 `aspect-ratio` 和宽度公式。人物应包含头、颈部、手腕与手指。
-
-每个标记分为：
-
-- `anchor: [x, y]`：对应首饰部位，连接线起点。
-- `label: [x, y]`：可点击标签左上角，连接线终点根据标签偏移计算。
-- `desktop` / `mobile`：分别配置；坐标是画布宽高的百分比，不是整页坐标。
-- `order`：从 0 开始的出现顺序。
-- 分类链接从稳定 `id` 生成，例如 `/shop?category=rings`。
-
-滚动区高度和各阶段阈值分别在样式 `.modelSection` 与控制器的 `render()` 中。后续替换为视频或 3D 时，可保留场景配置与分类链接，替换视觉呈现层。
+备份：停网站和 worker，保持数据库运行，`npm run db:backup`。backups/时间目录同时保存数据库、图片及私有环境，需保护整个目录并备份源码/public/assets。恢复先用独立空库验证，步骤见技术文档；没有自动覆盖正式数据库的恢复功能。
 
 ## 验证命令
 
-在 VS Code 的项目新终端里执行：
-
 ```sh
 npm test
-npm run lint
 npm run typecheck
+npm run lint
 npm run build
+npm run verify:routes
+npm run test:integration
+npm run verify:restart
 ```
 
-网站运行时，可另开一个终端执行：
+test:integration 只准备/重置带明确标记的 forme_operations_test，运行服务测试与真实HTTP测试；先关闭3002测试预览。测试账号和图片只在隔离环境，使用随机密码及合成顾客信息。test:operations 只跑服务套件；dev:test 打开独立测试预览；verify:restart 只读核对其记录和图片。orders:expire 单次释放过期订单，orders:worker 持续每60秒执行。
+
+## 范围与后续
+
+已接真实本地商品/首页、SKU双仓、不可售/预留、流水、调拨及附件、盘点审批、个人角色、库存/订单查询与CSV、访客订单快照、私有查询、开发模拟付款、整单发货和实物退货。购物袋仍保存在浏览器，结账由服务端重新验证。
+
+尚未接真实付款/退款、优惠码、邮件、物流、顾客账号、部分发货、生产调度、MFA及公网保护。未来真实支付在 orders.ts 状态转换边界接签名验证、金额核对、唯一事件和对账；不复用公开模拟付款。让朋友通过互联网访问同样属于公网，必须先完成技术文档清单。
+
+## 通知增强验证
+
+`npm run test:notifications` 在标记为可丢弃的 forme_operations_test 数据库运行原有13组运营与通知场景，不写正式业务库。`npm run dev:test` 开3002隔离预览；预览运行后执行 `node scripts/notifications/http.mjs` 和 `node --conditions=react-server --import tsx scripts/operations/http.ts`。测试会重建隔离数据，不要把真实数据放入测试库。先停止3000开发预览再开测试预览，避免两个Next开发实例争写自动生成类型文件；完成后Control+C停测试预览，再运行 `npm run dev` 恢复主站。
+
+通知任务单次运行 `npm run notifications:check`，常驻 `npm run notifications:worker`（与orders:worker同一任务）。已保存阈值保留；未配置的仓库默认关闭，商品资料提醒也先关闭，按操作手册明确开启。迁移使用 `npm run db:migrate`，不会重置数据。
+
+## 采购、支出与物流验证
+
+先关闭主站和测试预览，依次执行：
 
 ```sh
-npm run verify:routes
+npm run test:business
+npm run dev:test
 ```
 
-它会实际请求页面、商品与帮助路径、筛选入口、本地图片，并检查无效详情页返回 404。测试结果、截图与未验证项见 `docs/verification.md`。
+另开终端（同样设置本地Node PATH）执行 `npm run test:business:http`、`npm run test:notifications:http`；原运营HTTP回归为 `node --conditions=react-server --import tsx scripts/operations/http.ts`。这些测试只使用带标记的隔离库，test:business 会重建隔离数据，绝不能把真实数据放进 forme_operations_test。
 
-## 后续需要的真实资料
+停测试预览后，可执行 `npm run db:stop`、`npm run db:start`、`npm run verify:business:restart`、`npm run verify:restart` 检查持久性，再用启动器恢复主站。所有私有测试凭据和报告留在忽略的 .local。
 
-正式品牌名与 Logo；统一比例商品图和佩戴图；含头部到腰部及双手的人物图（桌面/手机构图）；商品材质、尺寸、价格与库存；两个系列的主图与关联商品；客服方式、配送/退换政策、隐私与条款；需要展示的社交链接。
-
-本阶段没有承诺真实材质、认证、免邮门槛、退换期限或保修服务，也没有编造用户评价。当前内容适合体验和评审，商业资料确认后再进入真实商城阶段。
+现有每分钟通知任务已包含循环义务生成、付款/结果/退款及物流补查。自动生成义务不会自动付款；物流签收不会自动验收；凭证只通过授权下载。尚未接真实银行/物流/服务商API，没有会计、税务或利润系统。

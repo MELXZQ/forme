@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { brand } from "@/data/brand";
-import { categories } from "@/data/categories";
+import { getCategories } from "@/lib/catalog";
 import { guides, services } from "@/data/services";
 import { Icon } from "./Icon";
+import { operationsEnabled } from "@/server/operations/enabled";
 import s from "./Site.module.css";
 export function Guides() {
   return (
@@ -26,7 +27,8 @@ export function Guides() {
     </section>
   );
 }
-export function Footer() {
+export async function Footer() {
+  const categories = await getCategories();
   return (
     <>
       <section className={s.serviceBar} aria-label="Customer service">
@@ -50,13 +52,14 @@ export function Footer() {
           <nav aria-label="Shop categories">
             <h2>Explore</h2>
             {categories.map((c) => (
-              <Link key={c.id} href={`/shop?category=${c.id}`}>
+              <Link key={c.id} href={`/shop?category=${c.slug}`}>
                 {c.short}
               </Link>
             ))}
           </nav>
           <nav aria-label="Help and information">
             <h2>Good to know</h2>
+            {operationsEnabled() && <Link href="/orders">Order lookup</Link>}
             {services.map((item) => (
               <Link key={item.slug} href={`/info/${item.slug}`}>
                 {item.label}

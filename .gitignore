@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-operations-test/
 .tools/
 .npm-cache/
 test-results/
@@ -8,3 +9,6 @@ playwright-report/
 .DS_Store
 .env*
 !.env.example
+.local/
+src/generated/
+backups/
