@@ -63,7 +63,7 @@ export async function saveExpense(actor: Actor, input: unknown) {
     .parse(input);
   rateCheck(v);
   return command(actor, "expense-save", v.key, v, async (tx) => {
-    if (v.id) await lock(tx, "expense:" + v.id);
+    if (v.id) { await lock(tx, "expense:" + v.id); if(await tx.compensation.findUnique({where:{expenseId:v.id}})) throw new HttpError(409,"Customer refund evidence is managed by the compensation workflow"); }
     const old = v.id
       ? await tx.expense.findUniqueOrThrow({
           where: { id: v.id },
@@ -147,6 +147,7 @@ export async function recordCash(actor: Actor, id: string, input: unknown) {
   rateCheck(v);
   return command(actor, "cash-record", v.key, { id, ...v }, async (tx) => {
     await lock(tx, "expense:" + id);
+    if(await tx.compensation.findUnique({where:{expenseId:id}})) throw new HttpError(409,"Customer refund cash is managed by the compensation workflow");
     const expense = await tx.expense.findUniqueOrThrow({
       where: { id },
       include: { cash: true },
@@ -258,6 +259,7 @@ export async function expenseAction(actor: Actor, id: string, input: unknown) {
     .parse(input);
   return command(actor, "expense-action", v.key, { id, ...v }, async (tx) => {
     await lock(tx, "expense:" + id);
+    if(await tx.compensation.findUnique({where:{expenseId:id}})) throw new HttpError(409,"Customer refund cash is managed by the compensation workflow");
     const e = await tx.expense.findUniqueOrThrow({
       where: { id },
       include: { cash: true },

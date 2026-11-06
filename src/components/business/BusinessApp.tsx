@@ -536,6 +536,7 @@ export function BusinessApp() {
           "TRANSFER",
           "CUSTOMER_DELIVERY",
           "CUSTOMER_RETURN",
+          "REPLACEMENT",
           "SUPPLIER_RETURN",
           "OTHER",
         ],
@@ -577,6 +578,7 @@ export function BusinessApp() {
     <div className={s.root}>
       <nav className={s.nav}>
         <span className={s.brand}>FORME · Business</span>
+        <Link href="/admin/sales?section=home">My work / Orders & care</Link>
         <Link href="/admin/notifications">Notifications</Link>
         <Link href="/admin/operations">Stock & orders</Link>
         <Link href="/admin?catalogue=1">Catalogue</Link>

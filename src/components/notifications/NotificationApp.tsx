@@ -6,7 +6,15 @@ import { api } from "./client";
 import { ProductChecks } from "./StockTools";
 import { obj, list, str, num, Table, type Row } from "../operations/ui";
 import s from "../operations/Operations.module.css";
-const types = ["INVENTORY", "PRODUCT", "LOGISTICS", "SYSTEM", "PROCUREMENT", "FINANCE"];
+const types = [
+  "INVENTORY",
+  "PRODUCT",
+  "LOGISTICS",
+  "SYSTEM",
+  "PROCUREMENT",
+  "FINANCE",
+  "ORDER",
+];
 const severity = ["Information", "Task", "Warning", "Critical"];
 export function NotificationApp({
   actor,
@@ -103,6 +111,7 @@ export function NotificationApp({
     <div className={s.root} data-admin>
       <nav className={s.nav}>
         <strong>FORME / NOTIFICATIONS</strong>
+        <Link href="/admin/sales?section=home">My work / Orders & care</Link>
         <Link href="/admin/notifications">Today + pinned</Link>
         <Link href="/admin/notifications?view=all">All notifications</Link>
         <Link href="/admin/notifications?view=unfinished">

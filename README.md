@@ -9,7 +9,9 @@
 Finder 打开本目录，双击 **Start Website.command**，保持终端打开。它启动数据库、网站和每分钟一次的订单预留释放与通知检查任务。
 
 - 商城：http://127.0.0.1:3000
-- 通知首页：http://127.0.0.1:3000/admin
+- 按角色显示的综合待办首页：http://127.0.0.1:3000/admin
+- 通知中心：http://127.0.0.1:3000/admin/notifications
+- 高级订单、经营统计、售后与补偿：http://127.0.0.1:3000/admin/sales
 - 商品后台：http://127.0.0.1:3000/admin?catalogue=1
 - 库存与订单：http://127.0.0.1:3000/admin/operations
 - 供应商、采购、支出、循环支出与物流：http://127.0.0.1:3000/admin/business
@@ -44,6 +46,9 @@ npm run admin:create
 
 ## 使用文档
 
+- [订单、经营统计与售后操作手册](docs/sales-manual.md)：实际页面、保存筛选、真实/测试口径、时限、审批、外部退款登记、补发和完整样例。
+- [第三批技术说明](docs/sales-technical.md)：事件/快照、精确金额、统计公式、权限、事务、幂等、历史未知及接入边界。
+- [第三批验证记录](docs/sales-verification.md)：三批回归、接口、页面、构建与重启结果。
 - [采购、支出与物流操作手册](docs/business-manual.md)：实际按钮、分批收付/验收、退供应商、循环规则、私有凭证和任务。
 - [第二批技术说明](docs/business-technical.md)：模型、金额口径、状态、并发、权限及未来接入。
 - [第二批验证记录](docs/business-verification.md)：隔离测试、HTTP、界面及重启结果。
@@ -68,7 +73,7 @@ npm run db:migrate
 npm run db:seed
 ```
 
-迁移保留历史（当前7份），seed 按稳定标识补齐，不重置仓库余额。第二批业务迁移已在本机应用，无新增必填环境变量。不要执行 migrate reset 或删除数据库目录。
+迁移保留历史（当前9份），seed 按稳定标识补齐，不重置仓库余额。第三批增量迁移已在本机应用，无新增必填环境变量。旧订单不伪造付款时间、实际优惠或活动归因；新订单超时规则默认未启用。不要执行 migrate reset 或删除数据库目录。
 
 | 环境变量 | 用途 |
 |---|---|
@@ -105,6 +110,8 @@ test:integration 只准备/重置带明确标记的 forme_operations_test，运�
 
 尚未接真实付款/退款、优惠码、邮件、物流、顾客账号、部分发货、生产调度、MFA及公网保护。未来真实支付在 orders.ts 状态转换边界接签名验证、金额核对、唯一事件和对账；不复用公开模拟付款。让朋友通过互联网访问同样属于公网，必须先完成技术文档清单。
 
+第三批新增成交快照查询、独立真实/测试经营统计、订单事件、工作日时限、售后及补偿审批。外部收款/退款仅登记已核实事实，审批不会自动转钱；退款与支出共用一笔现金事实。补发独立履约，使用现有墨尔本库存预留/发货，不新增销售。Deals 仅记录活动关联，不改变定价。没有优惠券引擎，相关申请不能标为已发券。
+
 ## 通知增强验证
 
 `npm run test:notifications` 在标记为可丢弃的 forme_operations_test 数据库运行原有13组运营与通知场景，不写正式业务库。`npm run dev:test` 开3002隔离预览；预览运行后执行 `node scripts/notifications/http.mjs` 和 `node --conditions=react-server --import tsx scripts/operations/http.ts`。测试会重建隔离数据，不要把真实数据放入测试库。先停止3000开发预览再开测试预览，避免两个Next开发实例争写自动生成类型文件；完成后Control+C停测试预览，再运行 `npm run dev` 恢复主站。
@@ -125,3 +132,16 @@ npm run dev:test
 停测试预览后，可执行 `npm run db:stop`、`npm run db:start`、`npm run verify:business:restart`、`npm run verify:restart` 检查持久性，再用启动器恢复主站。所有私有测试凭据和报告留在忽略的 .local。
 
 现有每分钟通知任务已包含循环义务生成、付款/结果/退款及物流补查。自动生成义务不会自动付款；物流签收不会自动验收；凭证只通过授权下载。尚未接真实银行/物流/服务商API，没有会计、税务或利润系统。
+
+## 订单、统计与售后验证
+
+先停止主站和3002测试预览。`test:sales` 包含前两批完整回归，仅重建有可丢弃标记的隔离测试库：
+
+```sh
+npm run test:sales
+npm run dev:test
+```
+
+另开终端执行 `npm run test:sales:http`，以及上文原运营、通知和业务HTTP检查。测试样例、账号和证据仅存放在被忽略的 `.local`；不要把真实业务数据放入 `forme_operations_test`。停止测试预览后，`npm run db:stop`、`npm run db:start`、`npm run verify:sales:restart` 可核对订单事件、补偿、现金和凭证持久性。用 **Start Website.command** 恢复主站和任务。
+
+订单时限共用现有每分钟任务；单次补查仍为 `npm run notifications:check`。电脑休眠或关机期间不执行，重新启动后按真实业务时间补查，不自动退款、发货或发送顾客消息。

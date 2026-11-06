@@ -1,4 +1,5 @@
 import "server-only";
+import { captureOrderAudit } from "../sales/events";
 import { createHash } from "node:crypto";
 import { database } from "../db";
 import type { Prisma } from "@/generated/prisma/client";
@@ -55,7 +56,7 @@ export async function audit(
   before?: unknown,
   after?: unknown,
 ) {
-  return tx.auditLog.create({
+  const saved = await tx.auditLog.create({
     data: {
       actorId: actor.id,
       action,
@@ -66,6 +67,8 @@ export async function audit(
       ...(after == null ? {} : { after: JSON.parse(JSON.stringify(after)) }),
     },
   });
+  await captureOrderAudit(tx, saved, actor);
+  return saved;
 }
 export async function command<T>(
   actor: Actor,

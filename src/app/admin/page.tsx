@@ -12,7 +12,7 @@ export default async function AdminPage({
   const query = await searchParams;
   try {
     const actor = await requireStaff(await headers());
-    if (query.catalogue !== "1") redirect("/admin/notifications");
+    if (query.catalogue !== "1") redirect(actor.role === "viewer" ? "/admin/notifications" : "/admin/sales?section=home");
     if (actor.role !== "admin") redirect("/admin/operations");
   } catch (e) {
     if (e instanceof HttpError && e.status === 401) redirect("/admin/login");

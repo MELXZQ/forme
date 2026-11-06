@@ -436,28 +436,40 @@ model CommerceSettings {
 }
 
 model ShopOrder {
-  id                  String             @id @default(cuid())
-  number              String             @unique
+  id                  String                @id @default(cuid())
+  number              String                @unique
   email               String
   recipientName       String
   addressLine1        String
-  addressLine2        String             @default("")
+  addressLine2        String                @default("")
   city                String
   state               String
   postcode            String
-  country             String             @default("AU")
-  currency            String             @default("AUD")
+  country             String                @default("AU")
+  currency            String                @default("AUD")
   subtotalCents       Int
   discountCents       Int
   shippingCents       Int
   totalCents          Int
-  recordedRefundCents Int                @default(0)
-  paymentStatus       PaymentStatus      @default(PENDING)
-  fulfillmentStatus   FulfillmentStatus  @default(UNFULFILLED)
-  carrier             String             @default("")
-  trackingNumber      String             @default("")
-  exception           String             @default("")
-  createdAt           DateTime           @default(now())
+  dataKind            String                @default("UNKNOWN")
+  snapshotVersion     Int                   @default(1)
+  actualDiscountCents Int?
+  deliveredAt         DateTime?
+  etaDelivery         DateTime?             @db.Date
+  assigneeId          String?
+  shippingMethod      String                @default("STANDARD_AU")
+  events              OrderEvent[]
+  cases               AftercareCase[]
+  compensations       Compensation[]
+  refunds             OrderRefund[]
+  replacements        ReplacementShipment[]
+  recordedRefundCents Int                   @default(0)
+  paymentStatus       PaymentStatus         @default(PENDING)
+  fulfillmentStatus   FulfillmentStatus     @default(UNFULFILLED)
+  carrier             String                @default("")
+  trackingNumber      String                @default("")
+  exception           String                @default("")
+  createdAt           DateTime              @default(now())
   expiresAt           DateTime
   paidAt              DateTime?
   shippedAt           DateTime?
@@ -468,34 +480,43 @@ model ShopOrder {
   payments            PaymentEvent[]
   returns             OrderReturn[]
 
+  @@index([dataKind, paidAt])
+  @@index([shippedAt])
+  @@index([deliveredAt])
+  @@index([cancelledAt])
   @@index([paymentStatus, expiresAt])
   @@index([createdAt])
 }
 
 model OrderLine {
-  id                String        @id @default(cuid())
-  orderId           String
-  order             ShopOrder     @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  variantId         String
-  productId         String
-  productName       String
-  sku               String
-  size              String
-  color             String
-  categoryId        String
-  categoryName      String
-  collections       Json
-  imageMediaId      String?
-  imageMedia        Media?        @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
-  quantity          Int
-  originalUnitCents Int
-  unitPriceCents    Int
-  discountSource    String
-  discountCents     Int
-  lineTotalCents    Int
-  returns           OrderReturn[]
+  id                  String        @id @default(cuid())
+  orderId             String
+  order               ShopOrder     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  variantId           String
+  productId           String
+  productName         String
+  sku                 String
+  size                String
+  color               String
+  categoryId          String
+  categoryName        String
+  collections         Json
+  imageMediaId        String?
+  imageMedia          Media?        @relation(fields: [imageMediaId], references: [id], onDelete: Restrict)
+  quantity            Int
+  actualDiscountCents Int?
+  campaigns           Json          @default("[]")
+  pricingBasis        String        @default("LEGACY_REFERENCE_DIFFERENCE")
+  originalUnitCents   Int
+  unitPriceCents      Int
+  discountSource      String
+  discountCents       Int
+  lineTotalCents      Int
+  returns             OrderReturn[]
 
   @@unique([orderId, variantId])
+  @@index([productId, categoryId])
+  @@index([sku])
 }
 
 model StockReservation {
@@ -1042,4 +1063,195 @@ model BusinessAttachment {
   createdAt    DateTime @default(now())
 
   @@index([objectType, objectId])
+}
+
+model OrderEvent {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       ShopOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  type        String
+  source      String
+  dataKind    String
+  occurredAt  DateTime?
+  recordedAt  DateTime  @default(now())
+  actorId     String?
+  objectType  String
+  objectId    String
+  eventKey    String    @unique
+  amountCents Int?
+  before      Json?
+  after       Json?
+
+  @@index([orderId, occurredAt])
+  @@index([type, dataKind, occurredAt])
+}
+
+model DealCampaign {
+  id         String   @id @default(cuid())
+  name       String
+  version    Int      @default(1)
+  startsAt   DateTime
+  endsAt     DateTime
+  variantIds String[]
+  active     Boolean  @default(true)
+  notes      String   @default("")
+}
+
+model SavedOrderFilter {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  query     Json
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+}
+
+model AftercareCase {
+  id              String         @id @default(cuid())
+  number          String         @unique
+  orderId         String
+  order           ShopOrder      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  lineId          String?
+  quantity        Int?
+  parcelId        String?
+  type            String
+  source          String
+  summary         String
+  assigneeId      String
+  priority        Int            @default(1)
+  status          String         @default("OPEN")
+  version         Int            @default(1)
+  createdBy       String
+  createdAt       DateTime       @default(now())
+  occurredAt      DateTime
+  firstResponseAt DateTime?
+  dueAt           DateTime
+  closedAt        DateTime?
+  outcome         String         @default("")
+  compensations   Compensation[]
+
+  @@index([orderId, status])
+  @@index([assigneeId, status, dueAt])
+}
+
+model Compensation {
+  id           String               @id @default(cuid())
+  number       String               @unique
+  orderId      String
+  order        ShopOrder            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  caseId       String
+  case         AftercareCase        @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  type         String
+  amountCents  Int                  @default(0)
+  currency     String               @default("AUD")
+  lines        Json                 @default("[]")
+  basis        String
+  status       String               @default("DRAFT")
+  version      Int                  @default(1)
+  applicantId  String
+  approverId   String?
+  approvalNote String               @default("")
+  selfApproved Boolean              @default(false)
+  executorId   String
+  dueAt        DateTime
+  approvedAt   DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime             @default(now())
+  result       String               @default("")
+  expenseId    String?              @unique
+  refund       OrderRefund?
+  replacement  ReplacementShipment?
+
+  @@index([orderId, status])
+  @@index([status, dueAt])
+}
+
+model OrderRefund {
+  id             String       @id @default(cuid())
+  orderId        String
+  order          ShopOrder    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  compensationId String       @unique
+  compensation   Compensation @relation(fields: [compensationId], references: [id], onDelete: Restrict)
+  cashId         String       @unique
+  amountCents    Int
+  currency       String
+  occurredAt     DateTime
+  recordedAt     DateTime     @default(now())
+  source         String
+  dataKind       String
+  reference      String       @unique
+  actorId        String
+  allocations    Json         @default("[]")
+
+  @@index([occurredAt, dataKind])
+}
+
+model ReplacementShipment {
+  id             String       @id @default(cuid())
+  orderId        String
+  order          ShopOrder    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  compensationId String       @unique
+  compensation   Compensation @relation(fields: [compensationId], references: [id], onDelete: Restrict)
+  status         String       @default("RESERVED")
+  lines          Json
+  parcelId       String?      @unique
+  createdAt      DateTime     @default(now())
+  shippedAt      DateTime?
+  cancelledAt    DateTime?
+
+  @@index([orderId, status])
+}
+
+model OrderTimeoutRule {
+  id             String   @id @default(cuid())
+  kind           String
+  version        Int
+  enabled        Boolean  @default(false)
+  days           Int
+  dayMode        String
+  timezone       String
+  weekends       Int[]
+  holidays       String[]
+  shippingMethod String   @default("STANDARD_AU")
+  includeTest    Boolean  @default(false)
+  assigneeId     String
+  recipientIds   String[]
+  confirmerIds   String[]
+  severity       Int      @default(1)
+  pin            Boolean  @default(true)
+  escalateDays   Int      @default(3)
+  createdAt      DateTime @default(now())
+  createdBy      String
+  reason         String
+
+  @@unique([kind, version])
+}
+
+model OrderTimer {
+  id           String            @id @default(cuid())
+  kind         String
+  orderId      String
+  objectId     String
+  anchorAt     DateTime
+  deadlineAt   DateTime
+  ruleId       String
+  ruleSnapshot Json
+  active       Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  pauses       OrderTimerPause[]
+
+  @@unique([kind, objectId])
+  @@index([active, deadlineAt])
+}
+
+model OrderTimerPause {
+  id        String     @id @default(cuid())
+  timerId   String
+  timer     OrderTimer @relation(fields: [timerId], references: [id], onDelete: Restrict)
+  startsAt  DateTime
+  endsAt    DateTime
+  actorId   String
+  reason    String
+  createdAt DateTime   @default(now())
 }

@@ -447,8 +447,14 @@ export function Attachments({ type, id }: { type: string; id: string }) {
       <h2>Private evidence images</h2>
       <p>
         JPEG, PNG or WebP, up to 8 MB each / 5 per upload. Downloads require
-        permission. Financial evidence belongs on the expense or purchase, not a
-        shared logistics record.
+        permission.{" "}
+        {type === "case"
+          ? "Attach issue evidence here; refund proof belongs on the approved compensation request."
+          : type === "compensation"
+            ? "Attach evidence for this request; refund execution proof is visible only to owners."
+            : type === "order"
+              ? "Attach verified external payment evidence for this order."
+              : "Financial evidence belongs on the expense or purchase, not a shared logistics record."}
       </p>
       <button onClick={() => void load()}>Load attachments</button>
       <form

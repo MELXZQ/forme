@@ -67,7 +67,7 @@ await db.query(
   `DO $$ BEGIN IF to_regclass('public._prisma_migrations') IS NOT NULL THEN REVOKE ALL ON TABLE public._prisma_migrations FROM forme_app; END IF; END $$`,
 );
 await db.query(
-  `DO $$ DECLARE n text; BEGIN FOREACH n IN ARRAY ARRAY['InventoryLedger','AuditLog','OperationCommand','TransferReceipt','TransferReceiptLine','ReceiptAttachment','OrderLine','PaymentEvent','OrderReturn','NotificationRevision','NotificationReceipt','NotificationHistory','NotificationJobRun','CashRecord','PurchaseReceipt','PurchaseReceiptLine','SupplierReturn','SupplierReturnLine','ParcelEvent'] LOOP IF to_regclass(format('public.%I',n)) IS NOT NULL THEN EXECUTE format('REVOKE UPDATE, DELETE ON TABLE public.%I FROM forme_app',n); END IF; END LOOP; END $$`,
+  `DO $$ DECLARE n text; BEGIN FOREACH n IN ARRAY ARRAY['InventoryLedger','AuditLog','OperationCommand','TransferReceipt','TransferReceiptLine','ReceiptAttachment','OrderLine','PaymentEvent','OrderReturn','NotificationRevision','NotificationReceipt','NotificationHistory','NotificationJobRun','CashRecord','PurchaseReceipt','PurchaseReceiptLine','SupplierReturn','SupplierReturnLine','ParcelEvent','OrderEvent','OrderRefund','OrderTimeoutRule','OrderTimerPause'] LOOP IF to_regclass(format('public.%I',n)) IS NOT NULL THEN EXECUTE format('REVOKE UPDATE, DELETE ON TABLE public.%I FROM forme_app',n); END IF; END LOOP; END $$`,
 );
 await db.end();
 console.log(

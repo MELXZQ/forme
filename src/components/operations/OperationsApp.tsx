@@ -506,7 +506,8 @@ export function OperationsApp({ actor }: { actor: Actor }) {
           </Link>
         ))}
         {owner && <Link href="/admin?catalogue=1">Catalogue</Link>}
-        <Link href="/admin/notifications">Notifications</Link>
+        <Link href="/admin/sales?section=home">My work / Orders & care</Link>
+<Link href="/admin/notifications">Notifications</Link>
         <Link href="/">Open store ↗</Link>
         <button
           onClick={async () => {
@@ -1042,6 +1043,7 @@ export function OperationsApp({ actor }: { actor: Actor }) {
             )}
             {section === "orders" && !id && (
               <>
+                <p className={s.notice}>Legacy operational totals include simulations and reference-price differences. Use <Link href="/admin/sales?section=analytics">Sales & cash</Link> for verified real sales and actual discounts.</p>
                 <Filters
                   key={query}
                   section={section}

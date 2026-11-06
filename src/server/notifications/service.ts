@@ -16,7 +16,7 @@ const filters = z.object({
       "LOGISTICS",
       "SYSTEM",
       "PROCUREMENT",
-      "FINANCE",
+      "FINANCE", "ORDER",
     ])
     .optional(),
   severity: z.coerce.number().int().min(0).max(3).optional(),

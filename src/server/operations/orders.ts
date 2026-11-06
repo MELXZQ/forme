@@ -134,6 +134,13 @@ export async function createOrder(input: unknown) {
       discountCents > 1_000_000_000
     )
       throw new HttpError(400, "Order total or discount is too large.");
+    const campaigns = await tx.dealCampaign.findMany({
+      where: {
+        active: true,
+        startsAt: { lte: new Date() },
+        endsAt: { gte: new Date() },
+      },
+    });
     const order = await tx.shopOrder.create({
       data: {
         number: `FO-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${randomUUID().slice(0, 10).replaceAll("-", "").toUpperCase()}`,
@@ -144,6 +151,8 @@ export async function createOrder(input: unknown) {
         city: v.city,
         state: v.state,
         postcode: v.postcode,
+        snapshotVersion: 2,
+        actualDiscountCents: 0,
         subtotalCents,
         discountCents,
         shippingCents: settings.shippingCents,
@@ -169,6 +178,18 @@ export async function createOrder(input: unknown) {
                 (i) => !i.variantId || i.variantId === sku.id,
               )?.mediaId,
               quantity: item.quantity,
+              actualDiscountCents: 0,
+              pricingBasis: "LIST_PRICE_NO_APPLIED_DISCOUNT",
+              campaigns: campaigns
+                .filter((c) => c.variantIds.includes(sku.id))
+                .map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  version: c.version,
+                  startsAt: c.startsAt,
+                  endsAt: c.endsAt,
+                  attribution: "ASSOCIATION_ONLY",
+                })),
               originalUnitCents,
               unitPriceCents: sku.priceCents,
               discountSource:
@@ -197,6 +218,16 @@ export async function createOrder(input: unknown) {
         "Guest checkout inventory reservation",
       );
     }
+    await audit(
+      tx,
+      publicActor,
+      "ORDER_RESERVED",
+      "order",
+      order.id,
+      "Melbourne stock successfully reserved",
+      undefined,
+      { lines: selected.map(({ item }) => item) },
+    );
     await audit(
       tx,
       publicActor,
@@ -238,6 +269,8 @@ async function release(tx: Tx, actor: Actor, o: LockedOrder, reason: string) {
       data: { status: "RELEASED", resolvedAt: new Date() },
     });
   }
+  if (o.reservations.some((r) => r.status === "ACTIVE"))
+    await audit(tx, actor, "ORDER_RESERVATION_RELEASED", "order", o.id, reason);
 }
 export async function expireOrders(now = new Date()) {
   const pending = await database().shopOrder.findMany({
@@ -420,7 +453,7 @@ export async function simulatePayment(
           );
         await tx.shopOrder.update({
           where: { id },
-          data: { paymentStatus: "PAID", paidAt: new Date() },
+          data: { paymentStatus: "PAID", paidAt: new Date(), dataKind: "TEST" },
         });
       }
       await tx.paymentEvent.create({

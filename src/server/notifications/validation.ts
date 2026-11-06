@@ -8,6 +8,7 @@ export const category = z.enum([
   "SYSTEM",
   "PROCUREMENT",
   "FINANCE",
+  "ORDER",
 ]);
 export const audience = z
   .object({
@@ -24,6 +25,7 @@ export const routing = z
     SYSTEM: audience.optional(),
     PROCUREMENT: audience.optional(),
     FINANCE: audience.optional(),
+    ORDER: audience.optional(),
   })
   .strict();
 export const rulesSchema = z

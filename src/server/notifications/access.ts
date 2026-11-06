@@ -10,6 +10,7 @@ export function relatedPermission(
 ) {
   return (
     role === "admin" ||
+    (role === "warehouse" && type === "ORDER") ||
     (type === "FINANCE" && capabilities.includes("finance")) ||
     (type === "PROCUREMENT" && capabilities.includes("procurement")) ||
     ((role === "warehouse" || role === "viewer") &&
@@ -82,6 +83,8 @@ export function redact(n: Notification, actor: Actor) {
 }
 export function internalLink(n: Pick<Notification, "objectType" | "objectId">) {
   const id = encodeURIComponent(n.objectId);
+  if (["order", "case", "compensation"].includes(n.objectType))
+    return `/admin/sales?section=${n.objectType === "order" ? "orders" : n.objectType === "case" ? "cases" : "compensations"}&id=${id}`;
   if (n.objectType === "recurring")
     return `/admin/business?section=recurring&id=${id}`;
   if (n.objectType === "purchase")

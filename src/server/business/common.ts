@@ -61,6 +61,13 @@ export const capabilities = [
   "finance",
   "recurring",
   "logistics",
+  "orderStats",
+  "orderExport",
+  "customerExport",
+  "aftercare",
+  "compensationApply",
+  "compensationExecute",
+  "orderRules",
 ] as const;
 export async function allowed(
   actor: Actor,

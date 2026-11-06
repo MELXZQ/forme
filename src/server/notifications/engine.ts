@@ -1,4 +1,5 @@
 import "server-only";
+import { timeoutIssues } from "../sales/timeouts";
 import { generateRecurring } from "../business/recurring";
 import { businessIssues } from "../business/notifications";
 import { createHash } from "node:crypto";
@@ -18,7 +19,11 @@ export type Issue = {
     | "LOGISTICS"
     | "SYSTEM"
     | "PROCUREMENT"
-    | "FINANCE";
+    | "FINANCE"
+    | "ORDER";
+  route?: {assigneeId:string;recipientIds:string[];confirmerIds:string[]};
+  ruleVersion?: number;
+  ruleSnapshot?: Prisma.InputJsonObject;
   severity: number;
   title: string;
   reason: string;
@@ -62,7 +67,7 @@ async function check(tx: Tx) {
     select: { id: true },
   });
   await generateRecurring(tx);
-  const issues: Issue[] = await businessIssues(tx, rules.overdueGraceDays);
+  const issues: Issue[] = [...await businessIssues(tx, rules.overdueGraceDays), ...await timeoutIssues(tx)];
   const policies = await tx.stockAlertPolicy.findMany();
   const skus = await tx.productVariant.findMany({
     include: {
@@ -321,13 +326,15 @@ async function check(tx: Tx) {
       if (old.fingerprint !== fingerprint) {
         const version = old.version + 1;
         const reopen = old.status;
+        if(i.route) await validatePeople(tx,i.type,i.warehouse??null,[i.route.assigneeId,...i.route.recipientIds,...i.route.confirmerIds]);
         await tx.notification.update({
           where: { id: old.id },
           data: {
             version,
+            ...(i.route ? {assigneeId:i.route.assigneeId, recipientIds:[...new Set([...i.route.recipientIds,...i.route.confirmerIds,i.route.assigneeId])],confirmerIds:i.route.confirmerIds} : {}),
             fingerprint,
-            ruleVersion: rules.version,
-            ruleSnapshot: json(rules),
+            ruleVersion: i.ruleVersion ?? rules.version,
+            ruleSnapshot: i.ruleSnapshot ?? json(rules),
             title: i.title,
             reason: i.reason,
             action: i.action,
@@ -349,7 +356,7 @@ async function check(tx: Tx) {
             notificationId: old.id,
             version,
             snapshot: json(i.data),
-            confirmerIds: old.confirmerIds,
+            confirmerIds: i.route?.confirmerIds ?? old.confirmerIds,
             reason:
               "Material quantity, due-date or action change; confirmation required again.",
           },
@@ -383,7 +390,7 @@ async function check(tx: Tx) {
       where: { issueKey: i.key },
       orderBy: { cycle: "desc" },
     });
-    let route = routes[i.type];
+    let route = i.route ?? routes[i.type];
     if (!route) {
       if (owners.length !== 1)
         throw new HttpError(
@@ -451,8 +458,8 @@ async function check(tx: Tx) {
         confirmerIds: route.confirmerIds,
         fingerprint,
         rule: i.key.split(":")[0],
-        ruleVersion: rules.version,
-        ruleSnapshot: json(rules),
+        ruleVersion: i.ruleVersion ?? rules.version,
+        ruleSnapshot: i.ruleSnapshot ?? json(rules),
         snapshot: json(i.data),
         currentData: json(i.data),
         occurredAt: i.occurredAt ?? new Date(),
@@ -470,7 +477,7 @@ async function check(tx: Tx) {
       },
     });
     await history(tx, n.id, "CREATED", "Rule triggered", {
-      ruleVersion: rules.version,
+      ruleVersion: i.ruleVersion ?? rules.version,
     });
   }
   const stale = await tx.notification.findMany({

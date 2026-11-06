@@ -1,4 +1,5 @@
 import "server-only";
+import { caseAccess, compensationAccess, accessOrder } from "../sales/access";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -38,7 +39,19 @@ export async function attachmentPermission(
   id: string,
 ) {
   const db = database();
-  if (type === "expense") {
+  if (type === "case") {
+    await caseAccess(actor, id);
+  } else if (type === "compensation") {
+    const c = await compensationAccess(actor, id);
+    if (c.type.endsWith("REFUND") && actor.role !== "admin")
+      throw new HttpError(
+        403,
+        "Monetary compensation evidence is owner-only; attach case evidence to the case",
+      );
+  } else if (type === "order") {
+    await permit(actor, "orderStats");
+    await accessOrder(actor, id);
+  } else if (type === "expense") {
     await permit(actor, "finance");
     await db.expense.findUniqueOrThrow({ where: { id } });
   } else if (type === "purchase") {

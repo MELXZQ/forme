@@ -34,7 +34,10 @@
     "test:notifications:http": "node scripts/notifications/http.mjs",
     "test:business": "npm run test:notifications && node --conditions=react-server --import tsx scripts/business/test.ts && node --conditions=react-server --import tsx scripts/business/edge-cases.ts",
     "test:business:http": "node scripts/business/http.mjs",
-    "verify:business:restart": "node --conditions=react-server --import tsx scripts/business/restart.ts"
+    "verify:business:restart": "node --conditions=react-server --import tsx scripts/business/restart.ts",
+    "test:sales": "npm run test:business && node --conditions=react-server --import tsx scripts/sales/test.ts && node --conditions=react-server --import tsx scripts/sales/edge-cases.ts",
+    "test:sales:http": "node scripts/sales/http.mjs",
+    "verify:sales:restart": "node --conditions=react-server --import tsx scripts/sales/restart.ts"
   },
   "engines": {
     "node": ">=24 <25"
