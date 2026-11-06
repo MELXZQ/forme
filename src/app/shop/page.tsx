@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/Select";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listProducts, getCategories, getCollections } from "@/lib/catalog";
@@ -77,7 +78,7 @@ export default async function Shop({
         </div>
         <div>
           <label htmlFor="category">Category</label>
-          <select
+          <Select
             id="category"
             name="category"
             defaultValue={query.category || ""}
@@ -88,11 +89,11 @@ export default async function Shop({
                 {c.short}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="collection">Collection</label>
-          <select
+          <Select
             id="collection"
             name="collection"
             defaultValue={query.collection || ""}
@@ -103,16 +104,16 @@ export default async function Shop({
                 {c.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="sort">Sort by</label>
-          <select name="sort" id="sort" defaultValue={query.sort || "featured"}>
+          <Select name="sort" id="sort" defaultValue={query.sort || "featured"}>
             <option value="featured">Featured</option>
             <option value="newest">Newest first</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
-          </select>
+          </Select>
         </div>
         <label className={s.saleCheck}>
           <input

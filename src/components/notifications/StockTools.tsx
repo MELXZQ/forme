@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState } from "react";
 import { api } from "./client";
 import { type Row, str, num, list, obj } from "../operations/ui";
@@ -38,7 +40,8 @@ export function StockTools({
       <div className={s.grid}>
         <label>
           Warehouse
-          <select
+          <Select
+            aria-label="Warehouse"
             value={warehouse}
             onChange={(e) => {
               setWarehouse(e.target.value);
@@ -47,11 +50,12 @@ export function StockTools({
           >
             <option>BEIJING</option>
             <option>MELBOURNE</option>
-          </select>
+          </Select>
         </label>
         <label>
           Mode
-          <select
+          <Select
+            aria-label="Mode"
             value={mode}
             onChange={(e) => {
               setMode(e.target.value);
@@ -61,7 +65,7 @@ export function StockTools({
             <option value="CUSTOM">Custom threshold</option>
             <option value="INHERIT">Restore warehouse default</option>
             <option value="OFF">Turn alerts off</option>
-          </select>
+          </Select>
         </label>
         {mode === "CUSTOM" && (
           <label>
@@ -271,11 +275,15 @@ export function ProductChecks() {
           ))}
           <label>
             Mode
-            <select value={mode} onChange={(e) => setMode(e.target.value)}>
+            <Select
+              aria-label="Product check mode"
+              value={mode}
+              onChange={(e) => setMode(e.target.value)}
+            >
               <option>INHERIT</option>
               <option>ON</option>
               <option>OFF</option>
-            </select>
+            </Select>
           </label>
           <label>
             Reason

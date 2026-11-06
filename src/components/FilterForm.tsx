@@ -28,10 +28,13 @@ export function FilterForm({
         .forEach((field) => {
           if (field instanceof HTMLInputElement && field.type === "checkbox")
             field.checked = values.get(field.name) === field.value;
-          else
+          else {
             field.value =
               values.get(field.name) ||
               (field.name === "sort" ? "featured" : "");
+            if (field instanceof HTMLSelectElement)
+              field.dispatchEvent(new Event("forme:select-sync"));
+          }
         });
     };
     const sync = () => {

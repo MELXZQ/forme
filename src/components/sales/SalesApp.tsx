@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -278,7 +280,8 @@ function Filter({
             <label key={field.name}>
               {field.label}
               {field.type === "select" ? (
-                <select
+                <Select
+                  aria-label={field.label}
                   name={field.name}
                   defaultValue={params.get(field.name) || ""}
                 >
@@ -288,7 +291,7 @@ function Filter({
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               ) : (
                 <input
                   name={field.name}
@@ -342,7 +345,12 @@ function Filter({
           q.delete(k);
           q.delete("page");
           return (
-            <Link key={k} className={s.secondary} href={"/admin/sales?" + q}>
+            <Link
+              key={k}
+              className={s.filterChip}
+              href={"/admin/sales?" + q}
+              title={`Remove ${fields.find((f) => f.name === k)?.label || label(k)} filter`}
+            >
               {fields.find((f) => f.name === k)?.label || label(k)}:{" "}
               {fields
                 .find((f) => f.name === k)
@@ -363,11 +371,13 @@ function SavedFilters({
   params: URLSearchParams;
   onSaved: () => void;
 }) {
+  const [removing, setRemoving] = useState("");
+  const [error, setError] = useState("");
   return (
     <section className={s.box}>
       <h2>My saved filters</h2>
       {list(meta.filters).map((x) => (
-        <p key={str(x.id)}>
+        <div className={s.savedFilter} key={str(x.id)}>
           <Link
             href={
               "/admin/sales?section=orders&" +
@@ -381,21 +391,42 @@ function SavedFilters({
             {str(x.name)}
           </Link>{" "}
           <button
+            type="button"
+            className={s.linkButton}
+            disabled={!!removing}
+            aria-label={`Remove saved filter ${str(x.name)}`}
             onClick={async () => {
-              await api("filters", {
-                key: crypto.randomUUID(),
-                reason: "Remove my saved filter",
-                name: x.name,
-                query: {},
-                remove: true,
-              });
-              onSaved();
+              setRemoving(str(x.id));
+              setError("");
+              try {
+                await api("filters", {
+                  key: crypto.randomUUID(),
+                  reason: "Remove my saved filter",
+                  name: x.name,
+                  query: {},
+                  remove: true,
+                });
+                onSaved();
+              } catch (e) {
+                setError(
+                  e instanceof Error
+                    ? e.message
+                    : "Could not remove this filter. Try again.",
+                );
+              } finally {
+                setRemoving("");
+              }
             }}
           >
-            Remove
+            {removing === str(x.id) ? "Removing…" : "Remove"}
           </button>
-        </p>
+        </div>
       ))}
+      {error && (
+        <p className={s.error} role="alert">
+          {error}
+        </p>
+      )}
       <Form
         title="personal filter"
         fields={[f("name", "Filter name", "text", true), reason]}
@@ -838,11 +869,14 @@ export function SalesApp() {
     [loadedRelated, setRelated] = useState<Row>({}),
     [loadedKey, setLoadedKey] = useState(""),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
+    [savedNotice, setSavedNotice] = useState({ query: "", message: "" }),
     [revision, setRevision] = useState(0),
     [action, setAction] = useState(""),
     [proofs, setProofs] = useState<Row[]>([]),
     [editingRule, setEditingRule] = useState<Row>({});
+  const notice = savedNotice.query === query ? savedNotice.message : "";
+  const setNotice = (message: string, target = query) =>
+    setSavedNotice({ message, query: target });
   const viewKey = query + ":" + revision;
   const data = loadedKey === viewKey ? loadedData : null;
   const related = loadedKey === viewKey ? loadedRelated : {};
@@ -920,7 +954,12 @@ export function SalesApp() {
     setRevision((v) => v + 1);
   };
   const saved = (v: Row) => {
-    setNotice("Saved successfully.");
+    setNotice(
+      "Saved successfully.",
+      isNew && v.id
+        ? new URLSearchParams({ section, id: str(v.id) }).toString()
+        : query,
+    );
     if (isNew && v.id) router.push(href(section, v.id));
     else refresh();
   };
@@ -999,30 +1038,6 @@ export function SalesApp() {
   exportQuery.set("format", "csv");
   return (
     <div className={s.root}>
-      <nav className={s.nav}>
-        <span className={s.brand}>FORME · Orders & care</span>
-        {[
-          "home",
-          "orders",
-          "cases",
-          "compensations",
-          ...(owner || caps.includes("orderStats") ? ["analytics"] : []),
-          ...(owner || caps.includes("orderRules") ? ["rules"] : []),
-          ...(owner ? ["campaigns"] : []),
-        ].map((k) => (
-          <Link
-            key={k}
-            className={section === k ? s.active : ""}
-            href={href(k)}
-          >
-            {titles[k]}
-          </Link>
-        ))}
-        <Link href="/admin/notifications">Notifications</Link>
-        <Link href="/admin/operations">Stock & fulfillment</Link>
-        <Link href="/admin/business">Purchases & expenses</Link>
-        <Link href="/">Storefront</Link>
-      </nav>
       <main id="main" className={s.content}>
         <div className={s.heading}>
           <h1>{titles[section] || section}</h1>
@@ -1570,7 +1585,8 @@ export function SalesApp() {
           ) : (
             <label>
               Choose an order
-              <select
+              <Select
+                aria-label="Choose an order"
                 value={search.get("order") || ""}
                 onChange={(e) =>
                   router.push(href("cases") + "&new=1&order=" + e.target.value)
@@ -1582,7 +1598,7 @@ export function SalesApp() {
                     {str(o.number)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           ))}
         {section === "cases" && id && data && (

@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -259,7 +261,8 @@ function ParcelCreate({
       <div className={s.grid}>
         <label>
           Transport type
-          <select
+          <Select
+            aria-label="Transport type"
             value={type}
             onChange={(e) => {
               setType(e.target.value);
@@ -277,12 +280,13 @@ function ParcelCreate({
             ].map((t) => (
               <option key={t}>{t}</option>
             ))}
-          </select>
+          </Select>
         </label>
         {collection && (
           <label>
             Source business record
-            <select
+            <Select
+              aria-label="Source business record"
               value={source}
               onChange={(e) => {
                 setSource(e.target.value);
@@ -295,7 +299,7 @@ function ParcelCreate({
                   {str(r.number)}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         )}
       </div>
@@ -339,10 +343,14 @@ export function BusinessApp() {
   const [meta, setMeta] = useState<Row>({}),
     [data, setData] = useState<Row | null>(null),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
+    [savedNotice, setSavedNotice] = useState({ query: "", message: "" }),
     [revision, setRevision] = useState(0),
     [action, setAction] = useState("");
   const query = params.toString();
+  const notice = savedNotice.query === query ? savedNotice.message : "";
+  const setNotice = (message: string, target = query) =>
+    setSavedNotice({ message, query: target });
+
   useEffect(() => {
     let live = true;
     businessApi("meta")
@@ -380,17 +388,7 @@ export function BusinessApp() {
       live = false;
     };
   }, [section, id, isNew, query, revision]);
-  const caps = (meta.capabilities || []) as string[],
-    owner = obj(meta.actor).role === "admin";
-  const sections = [
-    ...(caps.includes("procurement") ? ["suppliers", "purchases"] : []),
-    ...(caps.includes("finance") ? ["expenses"] : []),
-    ...(caps.includes("recurring") && caps.includes("finance")
-      ? ["recurring"]
-      : []),
-    "logistics",
-    ...(owner ? ["grants"] : []),
-  ];
+  const caps = (meta.capabilities || []) as string[];
   const refresh = () => {
     setNotice("Saved successfully.");
     setRevision((n) => n + 1);
@@ -398,6 +396,11 @@ export function BusinessApp() {
   const saved = (r: Row) => {
     if (isNew && r.id) router.push(href(section, r.id));
     refresh();
+    if (isNew && r.id)
+      setNotice(
+        "Saved successfully.",
+        new URLSearchParams({ section, id: str(r.id) }).toString(),
+      );
   };
   const baseInitial = {
     assigneeId: obj(meta.actor).id,
@@ -576,23 +579,6 @@ export function BusinessApp() {
     );
   return (
     <div className={s.root}>
-      <nav className={s.nav}>
-        <span className={s.brand}>FORME · Business</span>
-        <Link href="/admin/sales?section=home">My work / Orders & care</Link>
-        <Link href="/admin/notifications">Notifications</Link>
-        <Link href="/admin/operations">Stock & orders</Link>
-        <Link href="/admin?catalogue=1">Catalogue</Link>
-        <Link href="/">Storefront</Link>
-        {sections.map((x) => (
-          <Link
-            key={x}
-            href={href(x)}
-            className={section === x ? s.active : ""}
-          >
-            {x === "grants" ? "Permissions" : x[0].toUpperCase() + x.slice(1)}
-          </Link>
-        ))}
-      </nav>
       <main id="main" className={s.content}>
         <div className={s.heading}>
           <h1>{section[0].toUpperCase() + section.slice(1)}</h1>
@@ -675,7 +661,8 @@ export function BusinessApp() {
               <label key={field.name}>
                 {field.label}
                 {field.type === "select" ? (
-                  <select
+                  <Select
+                    aria-label={field.label}
                     name={field.name}
                     defaultValue={params.get(field.name) || ""}
                   >
@@ -685,7 +672,7 @@ export function BusinessApp() {
                         {o.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 ) : field.type === "checkbox" ? (
                   <input
                     name={field.name}
@@ -1722,11 +1709,15 @@ function FeeLink({
     <section className={s.box}>
       <label>
         Business type
-        <select value={type} onChange={(e) => setType(e.target.value)}>
+        <Select
+          aria-label="Business type"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+        >
           {["parcel", "transfer", "order", "subscription"].map((x) => (
             <option key={x}>{x}</option>
           ))}
-        </select>
+        </Select>
       </label>
       <BusinessForm
         key={type}

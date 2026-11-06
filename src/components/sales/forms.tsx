@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState, useRef } from "react";
 import { obj, str, type Row } from "../operations/ui";
 import s from "../operations/Operations.module.css";
@@ -149,68 +151,71 @@ export function Form({
       }}
     >
       <h2>{title}</h2>
-      <div className={s.grid}>
-        {fields.map((field) => (
-          <label key={field.name}>
-            {field.label}
-            {field.type === "textarea" ? (
-              <textarea
-                required={field.required}
-                value={str(values[field.name])}
-                onChange={(e) =>
-                  setValues({ ...values, [field.name]: e.target.value })
-                }
-              />
-            ) : field.type === "select" || field.type === "multi" ? (
-              <select
-                multiple={field.type === "multi"}
-                required={field.required}
-                value={
-                  field.type === "multi"
-                    ? (values[field.name] as string[])
-                    : str(values[field.name])
-                }
-                onChange={(e) =>
-                  setValues({
-                    ...values,
-                    [field.name]:
-                      field.type === "multi"
-                        ? [...e.target.selectedOptions].map((o) => o.value)
-                        : e.target.value,
-                  })
-                }
-              >
-                {field.type !== "multi" && <option value="">Choose…</option>}
-                {field.options?.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            ) : field.type === "checkbox" ? (
-              <input
-                type="checkbox"
-                checked={!!values[field.name]}
-                onChange={(e) =>
-                  setValues({ ...values, [field.name]: e.target.checked })
-                }
-              />
-            ) : (
-              <input
-                type={field.type === "amount" ? "text" : field.type || "text"}
-                step={field.type === "datetime-local" ? 1 : undefined}
-                inputMode={field.type === "amount" ? "decimal" : undefined}
-                required={field.required}
-                value={str(values[field.name])}
-                onChange={(e) =>
-                  setValues({ ...values, [field.name]: e.target.value })
-                }
-              />
-            )}{" "}
-            {field.help && <small>{field.help}</small>}
-          </label>
-        ))}
-      </div>
+      <fieldset disabled={busy}>
+        <div className={s.grid}>
+          {fields.map((field) => (
+            <label key={field.name}>
+              {field.label}
+              {field.type === "textarea" ? (
+                <textarea
+                  required={field.required}
+                  value={str(values[field.name])}
+                  onChange={(e) =>
+                    setValues({ ...values, [field.name]: e.target.value })
+                  }
+                />
+              ) : field.type === "select" || field.type === "multi" ? (
+                <Select
+                  aria-label={field.label}
+                  multiple={field.type === "multi"}
+                  required={field.required}
+                  value={
+                    field.type === "multi"
+                      ? (values[field.name] as string[])
+                      : str(values[field.name])
+                  }
+                  onChange={(e) =>
+                    setValues({
+                      ...values,
+                      [field.name]:
+                        field.type === "multi"
+                          ? [...e.target.selectedOptions].map((o) => o.value)
+                          : e.target.value,
+                    })
+                  }
+                >
+                  {field.type !== "multi" && <option value="">Choose…</option>}
+                  {field.options?.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              ) : field.type === "checkbox" ? (
+                <input
+                  type="checkbox"
+                  checked={!!values[field.name]}
+                  onChange={(e) =>
+                    setValues({ ...values, [field.name]: e.target.checked })
+                  }
+                />
+              ) : (
+                <input
+                  type={field.type === "amount" ? "text" : field.type || "text"}
+                  step={field.type === "datetime-local" ? 1 : undefined}
+                  inputMode={field.type === "amount" ? "decimal" : undefined}
+                  required={field.required}
+                  value={str(values[field.name])}
+                  onChange={(e) =>
+                    setValues({ ...values, [field.name]: e.target.value })
+                  }
+                />
+              )}{" "}
+              {field.help && <small>{field.help}</small>}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       {error && (
         <p role="alert" className={s.error}>
           {error}

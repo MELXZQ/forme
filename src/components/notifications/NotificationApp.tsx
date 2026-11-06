@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -109,43 +111,6 @@ export function NotificationApp({
   };
   return (
     <div className={s.root} data-admin>
-      <nav className={s.nav}>
-        <strong>FORME / NOTIFICATIONS</strong>
-        <Link href="/admin/sales?section=home">My work / Orders & care</Link>
-        <Link href="/admin/notifications">Today + pinned</Link>
-        <Link href="/admin/notifications?view=all">All notifications</Link>
-        <Link href="/admin/notifications?view=unfinished">
-          Unfinished tasks
-        </Link>
-        <Link href="/admin/notifications?view=all&confirm=true">
-          Awaiting my confirmation
-        </Link>
-        <Link href="/admin/notifications?view=all&mine=true">
-          Assigned to me
-        </Link>
-        <Link href="/admin/operations">Stock / Orders</Link>
-        <Link href="/admin/business">Purchases / Expenses / Logistics</Link>
-        {owner && (
-          <>
-            <Link href="/admin?catalogue=1">Catalogue</Link>
-            <Link href="/admin/notifications?view=rules">
-              Rules / task status
-            </Link>
-          </>
-        )}
-        <button
-          onClick={async () => {
-            await fetch("/api/auth/sign-out", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: "{}",
-            });
-            router.replace("/admin/login");
-          }}
-        >
-          Sign out
-        </button>
-      </nav>
       <main id="main" className={s.content}>
         <div className={s.heading}>
           <h1>
@@ -188,7 +153,8 @@ export function NotificationApp({
             </p>
             <label>
               My timezone
-              <select
+              <Select
+                aria-label="My timezone"
                 value={zone}
                 onChange={async (e) => {
                   try {
@@ -203,7 +169,7 @@ export function NotificationApp({
                   Melbourne (daylight saving aware)
                 </option>
                 <option value="Asia/Shanghai">Beijing</option>
-              </select>
+              </Select>
             </label>
             <form
               key={query}
@@ -227,16 +193,21 @@ export function NotificationApp({
               </label>
               <label>
                 Type
-                <select name="type" defaultValue={params.get("type") || ""}>
+                <Select
+                  aria-label="Type"
+                  name="type"
+                  defaultValue={params.get("type") || ""}
+                >
                   <option value="">All</option>
                   {types.map((t) => (
                     <option key={t}>{t}</option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label>
                 Level
-                <select
+                <Select
+                  aria-label="Level"
                   name="severity"
                   defaultValue={params.get("severity") || ""}
                 >
@@ -246,23 +217,28 @@ export function NotificationApp({
                       {v}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label>
                 Status
-                <select name="status" defaultValue={params.get("status") || ""}>
+                <Select
+                  aria-label="Status"
+                  name="status"
+                  defaultValue={params.get("status") || ""}
+                >
                   <option value="">All</option>
                   {["OPEN", "IN_PROGRESS", "RESOLVED", "NOT_APPLICABLE"].map(
                     (v) => (
                       <option key={v}>{v}</option>
                     ),
                   )}
-                </select>
+                </Select>
               </label>
               {owner && (
                 <label>
                   Assignee
-                  <select
+                  <Select
+                    aria-label="Assignee"
                     name="assignee"
                     defaultValue={params.get("assignee") || ""}
                   >
@@ -272,7 +248,7 @@ export function NotificationApp({
                         {str(p.name)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               )}
               {["mine", "confirm", "unread", "pinned"].map((k) => (
@@ -485,7 +461,8 @@ export function NotificationApp({
                 <>
                   <label>
                     Responsible person
-                    <select
+                    <Select
+                      aria-label="Responsible person"
                       value={assignee}
                       onChange={(e) => setAssignee(e.target.value)}
                     >
@@ -495,7 +472,7 @@ export function NotificationApp({
                           {str(p.name)} · {str(p.role)}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                   <button
                     disabled={busy || !assignee || reason.trim().length < 3}
@@ -658,14 +635,18 @@ function Rules({ data, onSaved }: { data: Row; onSaved: () => Promise<void> }) {
         ))}
         <label>
           Scope when enabling
-          <select value={scope} onChange={(e) => setScope(e.target.value)}>
+          <Select
+            aria-label="Scope when enabling"
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+          >
             <option value="FUTURE">
               Future additions only (retain existing included scope)
             </option>
             <option value="EXISTING">
               Include existing products — one grouped reminder
             </option>
-          </select>
+          </Select>
         </label>
         <h2>Transport and priority</h2>
         <label>
@@ -700,7 +681,8 @@ function Rules({ data, onSaved }: { data: Row; onSaved: () => Promise<void> }) {
               <legend>{type}</legend>
               <label>
                 Responsible person
-                <select
+                <Select
+                  aria-label={`${type} responsible person`}
                   value={str(r.assigneeId)}
                   onChange={(e) => {
                     if (!e.target.value) {
@@ -724,7 +706,7 @@ function Rules({ data, onSaved }: { data: Row; onSaved: () => Promise<void> }) {
                       {str(p.name)} · {str(p.role)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               {!!r.assigneeId &&
                 ["recipientIds", "confirmerIds"].map((k) => (

@@ -26,6 +26,7 @@
   color: #fff;
 }
 .content {
+  min-width: 0;
   max-width: 1540px;
   margin: 0 auto;
   padding: 32px 4vw 70px;
@@ -46,6 +47,8 @@
   font-size: 24px;
 }
 .box {
+  min-width: 0;
+  overflow-wrap: anywhere;
   background: #fff;
   border: 1px solid #d7d4cc;
   padding: 24px;
@@ -59,7 +62,7 @@
 .grid,
 .filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   gap: 16px;
 }
 .filters {
@@ -69,8 +72,10 @@
   align-items: end;
 }
 .filters label,
+.grid > label,
 .field,
 .wide {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -133,6 +138,9 @@
   margin: 0;
 }
 .tableWrap {
+  min-width: 0;
+  max-width: 100%;
+  overscroll-behavior-x: contain;
   width: 100%;
   overflow: auto;
   margin: 22px 0;
@@ -149,7 +157,10 @@
   padding: 14px 12px;
   border-bottom: 1px solid #e0ded6;
   vertical-align: top;
-  white-space: nowrap;
+  min-width: 100px;
+  max-width: 320px;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
 }
 .tableWrap th {
   background: #eae8e0;
@@ -163,8 +174,43 @@
   display: block;
 }
 .linkButton {
+  min-height: 44px;
+  padding: 8px 4px;
+  background: transparent;
+  color: #79543c;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+.savedFilter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #e0ded6;
+}
+.savedFilter > a {
+  min-width: 0;
+  padding: 10px 0;
+  line-height: 1.6;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.savedFilter > button {
+  flex-shrink: 0;
+}
+.filterChip {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 9px 12px;
+  margin: 8px 8px 0 0;
+  min-height: 38px;
+  align-items: center;
+  background: #eeede7;
+  border: 1px solid #d7d4cc;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 .muted,
 .field small {
@@ -174,6 +220,7 @@
 }
 .notice,
 .error {
+  overflow-wrap: anywhere;
   padding: 16px;
   margin: 16px 0;
   font-size: 14px;
@@ -195,7 +242,18 @@
 .stats > div {
   background: #eeede7;
   padding: 18px;
-  min-width: 180px;
+  min-width: 0;
+  flex: 1 1 180px;
+  overflow-wrap: anywhere;
+}
+.stats dt {
+  font-size: 12px;
+  color: #67675f;
+  line-height: 1.5;
+}
+.stats dd {
+  margin: 8px 0 0;
+  line-height: 1.5;
 }
 .stats strong {
   display: block;
@@ -204,7 +262,7 @@
 }
 .split {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
 .timeline {
@@ -212,6 +270,7 @@
   padding: 0;
 }
 .timeline li {
+  overflow-wrap: anywhere;
   border-left: 2px solid #c0b8a8;
   padding: 2px 0 18px 18px;
   font-size: 13px;
@@ -235,6 +294,9 @@
   display: inline-block;
 }
 .tags {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   padding: 6px 9px;
   background: #e5e3dc;
   font-size: 11px;
@@ -322,11 +384,11 @@ button:disabled.secondary {
     padding: 16px;
   }
   .stats > div {
-    min-width: 140px;
-    flex: 1;
+    min-width: 0;
+    flex: 1 1 130px;
   }
   .filters {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 14px;
   }
   .grid {
@@ -334,5 +396,37 @@ button:disabled.secondary {
   }
   .checkout h1 {
     font-size: 32px;
+  }
+}
+.grid > *,
+.split > * {
+  min-width: 0;
+}
+.content h1,
+.content h2,
+.content h3,
+.content p,
+.content a {
+  overflow-wrap: anywhere;
+}
+.box summary {
+  cursor: pointer;
+  padding: 8px 0;
+  line-height: 1.6;
+}
+.box details[open] > summary {
+  margin-bottom: 16px;
+}
+.root input[type="date"],
+.root input[type="datetime-local"] {
+  min-width: 0;
+  max-width: 100%;
+}
+.pager {
+  flex-wrap: wrap;
+}
+@media (max-width: 380px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

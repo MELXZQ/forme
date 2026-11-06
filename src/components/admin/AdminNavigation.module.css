@@ -1,0 +1,153 @@
+.header {
+  background: #efede7;
+  color: #292b2c;
+  border-bottom: 1px solid #d9d6d0;
+}
+.top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 4vw 8px;
+  max-width: 1700px;
+  margin: auto;
+}
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 23px;
+  font-weight: 650;
+  letter-spacing: -1px;
+}
+.brand span {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 1.2px;
+}
+.badge,
+.testBadge {
+  padding: 5px 8px;
+  font-size: 10px;
+  border: 1px solid #cac5b9;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.testBadge {
+  background: #f7e7d3;
+  border-color: #cba879;
+  color: #734619;
+}
+.utilities {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+}
+.utilities a,
+.utilities button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: transparent;
+  font: inherit;
+}
+.utilities button:disabled {
+  cursor: wait;
+}
+.role {
+  color: #6d665d;
+}
+.groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 4vw 0;
+  max-width: 1700px;
+  margin: auto;
+}
+.groups a {
+  padding: 14px 18px;
+  min-height: 48px;
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+}
+.groups a:hover {
+  background: #e6e1d7;
+}
+.groups a[aria-current] {
+  background: #292b2c;
+  color: #fffefb;
+  border-color: #292b2c;
+}
+.children {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 8px 4vw;
+  background: #fffefb;
+  border-top: 1px solid #d9d6d0;
+}
+.children a {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 13px 15px;
+  font-size: 12px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.children a:hover {
+  background: #f0ede6;
+}
+.children a[aria-current] {
+  color: #79543c;
+  font-weight: 600;
+  border-color: #98603f;
+  background: #f4eee5;
+}
+.mobileGroup {
+  display: none;
+}
+.error {
+  padding: 14px 4vw;
+  background: #f1dcd5;
+  color: #842a19;
+}
+@media (max-width: 720px) {
+  .top {
+    padding: 16px 16px 0;
+    gap: 10px;
+  }
+  .brand {
+    font-size: 21px;
+  }
+  .utilities {
+    width: 100%;
+    margin: 0;
+    gap: 18px;
+  }
+  .role {
+    margin-right: auto;
+  }
+  .groups {
+    display: none;
+  }
+  .mobileGroup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px 16px;
+  }
+  .mobileGroup > label {
+    font-size: 12px;
+    color: #6d665d;
+  }
+  .children {
+    padding: 6px 16px;
+  }
+}

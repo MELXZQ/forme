@@ -1,3 +1,4 @@
+import { AdminShell } from "@/components/admin/AdminShell";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { HttpError } from "@/server/errors";
@@ -27,11 +28,13 @@ export default async function OperationsPage() {
       </main>
     );
   return (
-    <OperationsApp
-      actor={{
-        id: actor.id,
-        role: actor.role as "admin" | "warehouse" | "viewer",
-      }}
-    />
+    <AdminShell actor={actor}>
+      <OperationsApp
+        actor={{
+          id: actor.id,
+          role: actor.role as "admin" | "warehouse" | "viewer",
+        }}
+      />
+    </AdminShell>
   );
 }

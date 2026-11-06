@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState } from "react";
 import s from "./Admin.module.css";
 export type Field = {
@@ -71,7 +73,8 @@ export function EntityForm({
               >
                 {f.label}
                 {f.type === "select" ? (
-                  <select
+                  <Select
+                    aria-label={f.label}
                     value={String(draft[f.name] ?? "")}
                     onChange={(e) =>
                       update(
@@ -85,7 +88,7 @@ export function EntityForm({
                         {o.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 ) : f.type === "textarea" ? (
                   <textarea
                     value={String(draft[f.name] ?? "")}

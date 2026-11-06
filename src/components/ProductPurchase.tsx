@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { useStore } from "./StoreProvider";
@@ -23,14 +25,8 @@ export function ProductPurchase({ product: p }: { product: Product }) {
       {p.variants.length > 1 && (
         <label style={{ display: "grid", gap: 8, marginBottom: 16 }}>
           Choose an option
-          <select
+          <Select
             aria-label="Product option"
-            style={{
-              padding: 12,
-              minHeight: 44,
-              background: "transparent",
-              border: "1px solid #bdb9ae",
-            }}
             value={v.id}
             onChange={(e) => setId(e.target.value)}
           >
@@ -41,7 +37,7 @@ export function ProductPurchase({ product: p }: { product: Product }) {
                 {v.stock === 0 ? " — out of stock" : ""}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       )}
       <p className={s.muted}>

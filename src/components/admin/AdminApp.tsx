@@ -1,6 +1,7 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { api, type Taxonomy, type MediaItem } from "./api";
 import { EntityForm, type Field } from "./EntityForm";
 import {
@@ -11,7 +12,8 @@ import {
 import { Asset } from "../Asset";
 import { ProductChecks } from "../notifications/StockTools";
 import s from "./Admin.module.css";
-type Section = "products" | "categories" | "collections" | "media" | "home";
+export type CatalogueSection =
+  "products" | "categories" | "collections" | "media" | "home";
 type Row = {
   id: string;
   name?: string;
@@ -23,11 +25,15 @@ type Row = {
   [key: string]: unknown;
 };
 type Home = { settings: Row | null; slides: Row[]; markers: Row[] };
-export function AdminApp({ operations = false }: { operations?: boolean }) {
-  const router = useRouter();
+export function AdminApp({
+  section,
+  operations = true,
+}: {
+  section: CatalogueSection;
+  operations?: boolean;
+}) {
   const loadVersion = useRef(0);
-  const [section, setSection] = useState<Section>("products"),
-    [rows, setRows] = useState<Row[]>([]),
+  const [rows, setRows] = useState<Row[]>([]),
     [categories, setCategories] = useState<Taxonomy[]>([]),
     [collections, setCollections] = useState<Taxonomy[]>([]),
     [media, setMedia] = useState<MediaItem[]>([]),
@@ -101,13 +107,6 @@ export function AdminApp({ operations = false }: { operations?: boolean }) {
     { value: "", label: "Choose category" },
     ...categories.map((c) => ({ value: c.id, label: c.name })),
   ];
-  const switchSection = (value: Section) => {
-    setSection(value);
-    setEditing(null);
-    setEntity(null);
-    setError("");
-    setNotice("");
-  };
   const taxFields: Field[] = [
     { name: "name", label: "Name", required: true },
     { name: "slug", label: "Slug", required: true },
@@ -189,50 +188,6 @@ export function AdminApp({ operations = false }: { operations?: boolean }) {
   ];
   return (
     <div className={s.root} data-admin>
-      <nav className={s.nav} aria-label="Admin navigation">
-        <span className={s.brand}>FORME / ADMIN</span>
-        <a href="/admin/notifications">Notifications</a>
-        {operations && <a href="/admin/operations">Inventory / Orders</a>}
-        {(
-          ["products", "categories", "collections", "media", "home"] as const
-        ).map((item) => (
-          <button
-            key={item}
-            aria-current={section === item}
-            onClick={() => switchSection(item)}
-          >
-            {item === "home"
-              ? "Homepage"
-              : item[0].toUpperCase() + item.slice(1)}
-          </button>
-        ))}
-        <a className={s.end} href="/" target="_blank" rel="noreferrer">
-          Open store ↗
-        </a>
-        <button
-          onClick={async () => {
-            try {
-              const result = await fetch("/api/auth/sign-out", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: "{}",
-              });
-              if (!result.ok)
-                throw new Error("Sign-out failed. Please try again.");
-              router.replace("/admin/login");
-              router.refresh();
-            } catch (e) {
-              setError(
-                e instanceof Error
-                  ? e.message
-                  : "Could not reach the local service.",
-              );
-            }
-          }}
-        >
-          Sign out
-        </button>
-      </nav>
       <div className={s.content}>
         {loading && (
           <p role="status" className={s.small}>
@@ -248,6 +203,7 @@ export function AdminApp({ operations = false }: { operations?: boolean }) {
           {section === "products" && (
             <button
               className={s.button}
+              disabled={loading}
               onClick={() =>
                 setEditing({
                   slug: "",
@@ -312,7 +268,7 @@ export function AdminApp({ operations = false }: { operations?: boolean }) {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-              <select
+              <Select
                 aria-label="Filter product status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -321,7 +277,7 @@ export function AdminApp({ operations = false }: { operations?: boolean }) {
                 {["DRAFT", "PUBLISHED", "ARCHIVED"].map((v) => (
                   <option key={v}>{v}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             {editing && (
               <ProductEditor

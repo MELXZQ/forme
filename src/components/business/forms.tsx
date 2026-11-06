@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useRef, useState } from "react";
 import { type Row, obj, list, str } from "../operations/ui";
 import s from "../operations/Operations.module.css";
@@ -148,7 +150,8 @@ export function BusinessForm({
       <label className={s.field} key={f.name}>
         {f.label}
         {f.type === "select" ? (
-          <select
+          <Select
+            aria-label={f.label}
             value={str(value)}
             required={f.required}
             onChange={(e) => setValues({ ...values, [f.name]: e.target.value })}
@@ -159,7 +162,7 @@ export function BusinessForm({
                 {o.label}
               </option>
             ))}
-          </select>
+          </Select>
         ) : f.type === "checkbox" ? (
           <input
             type="checkbox"
@@ -311,7 +314,8 @@ export function BusinessForm({
               ) : (
                 <label className={s.field}>
                   SKU
-                  <select
+                  <Select
+                    aria-label="SKU"
                     required
                     value={str(r.variantId)}
                     onChange={(e) =>
@@ -336,7 +340,7 @@ export function BusinessForm({
                         {str(sku.sku)} · {str(obj(sku.product).name)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               )}
               {(lineKind === "receipt"

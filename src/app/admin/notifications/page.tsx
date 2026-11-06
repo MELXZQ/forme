@@ -1,3 +1,4 @@
+import { AdminShell } from "@/components/admin/AdminShell";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/server/operations/accounts";
@@ -12,5 +13,9 @@ export default async function Page() {
     if (e instanceof HttpError && e.status === 401) redirect("/admin/login");
     throw e;
   }
-  return <NotificationApp actor={{ id: actor.id, role: actor.role }} />;
+  return (
+    <AdminShell actor={actor}>
+      <NotificationApp actor={{ id: actor.id, role: actor.role }} />
+    </AdminShell>
+  );
 }

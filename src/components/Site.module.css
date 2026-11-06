@@ -1009,6 +1009,8 @@
   color: #73746c;
 }
 .filters {
+  --select-font-size: 11px;
+  --select-background: transparent;
   display: flex;
   align-items: flex-end;
   gap: 16px;
@@ -1031,7 +1033,7 @@
 .filters input[type="search"] {
   width: 100%;
   min-width: 0;
-  min-height: 43px;
+  min-height: 44px;
   background: transparent;
   border: 1px solid #bdb9ae;
   border-radius: 0;
@@ -1707,6 +1709,7 @@
   .filters {
     gap: 15px 12px;
     padding: 20px 0;
+    --select-font-size: 11px;
   }
   .filters > div,
   .filters > .filterSearch {

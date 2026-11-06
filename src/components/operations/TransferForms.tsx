@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState, useRef } from "react";
 import {
   MutationForm,
@@ -63,7 +65,8 @@ export function TransferCreate({
             <div className={s.grid} key={i}>
               <label className={s.field}>
                 SKU {i + 1}
-                <select
+                <Select
+                  aria-label={`SKU ${i + 1}`}
                   required
                   value={str(line.variantId)}
                   onChange={(e) =>
@@ -80,7 +83,7 @@ export function TransferCreate({
                       {str(v.name)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className={s.field}>
                 Planned quantity {i + 1}

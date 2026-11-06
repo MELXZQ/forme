@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useState } from "react";
 import type { ProductInput, VariantInput } from "@/lib/validation";
 import { api, type Taxonomy, type MediaItem } from "./api";
@@ -152,7 +154,8 @@ export function ProductEditor({
           )}
           <label className={s.field}>
             Category
-            <select
+            <Select
+              aria-label="Category"
               required
               value={draft.categoryId}
               onChange={(e) => update({ categoryId: e.target.value })}
@@ -164,11 +167,12 @@ export function ProductEditor({
                   {!c.active ? " (disabled)" : ""}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className={s.field}>
             Publication status
-            <select
+            <Select
+              aria-label="Publication status"
               value={draft.status}
               onChange={(e) =>
                 update({ status: e.target.value as ProductInput["status"] })
@@ -177,7 +181,7 @@ export function ProductEditor({
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
               <option value="ARCHIVED">Archived</option>
-            </select>
+            </Select>
           </label>
           <label className={s.check}>
             <input
@@ -310,7 +314,7 @@ export function ProductEditor({
         </button>
         <p className={s.small}>
           {operations &&
-            "Warehouse quantities are managed through Inventory / Orders → Inventory. The original legacy value is not sellable stock. "}
+            "Warehouse quantities are managed through Inventory → Stock. The original legacy value is not sellable stock. "}
           No options? Keep one default SKU. Removed saved SKUs are disabled,
           preserving their stable IDs. Save new SKUs before attaching
           SKU-specific images.
@@ -360,7 +364,8 @@ export function ProductEditor({
         </label>
         <label className={s.field} style={{ marginTop: 15 }}>
           Attach an existing image
-          <select
+          <Select
+            aria-label="Attach an existing image"
             value=""
             onChange={(e) => {
               const m = media.find((m) => m.id === e.target.value);
@@ -384,7 +389,7 @@ export function ProductEditor({
                 {m.alt || m.id}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         {draft.images.map((image, i) => {
           const m = media.find((m) => m.id === image.mediaId);
@@ -412,7 +417,8 @@ export function ProductEditor({
               </label>
               <label className={s.field}>
                 SKU association
-                <select
+                <Select
+                  aria-label="SKU association"
                   value={image.variantId || ""}
                   onChange={(e) =>
                     update({
@@ -432,7 +438,7 @@ export function ProductEditor({
                         {v.sku}
                       </option>
                     ))}
-                </select>
+                </Select>
               </label>
               <div>
                 <button

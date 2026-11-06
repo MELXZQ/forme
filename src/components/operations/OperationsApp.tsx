@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { StockTools } from "../notifications/StockTools";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -493,41 +495,6 @@ export function OperationsApp({ actor }: { actor: Actor }) {
   };
   return (
     <div className={s.root} data-admin>
-      <nav className={s.nav} aria-label="Operations navigation">
-        <strong className={s.brand}>FORME / OPERATIONS</strong>
-        {sections.map((item) => (
-          <Link
-            key={item}
-            href={`/admin/operations?section=${item}`}
-            className={section === item ? s.active : undefined}
-            aria-current={section === item ? "page" : undefined}
-          >
-            {item[0].toUpperCase() + item.slice(1)}
-          </Link>
-        ))}
-        {owner && <Link href="/admin?catalogue=1">Catalogue</Link>}
-        <Link href="/admin/sales?section=home">My work / Orders & care</Link>
-<Link href="/admin/notifications">Notifications</Link>
-        <Link href="/">Open store ↗</Link>
-        <button
-          onClick={async () => {
-            try {
-              const r = await fetch("/api/auth/sign-out", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: "{}",
-              });
-              if (!r.ok) throw new Error("Sign-out failed.");
-              router.replace("/admin/login");
-              router.refresh();
-            } catch (e) {
-              setError((e as Error).message);
-            }
-          }}
-        >
-          Sign out
-        </button>
-      </nav>
       <main id="main" className={s.content}>
         <p className={s.titleNote}>
           {roleLabels[actor.role]} · Times shown in Melbourne. Date-range
@@ -1043,7 +1010,14 @@ export function OperationsApp({ actor }: { actor: Actor }) {
             )}
             {section === "orders" && !id && (
               <>
-                <p className={s.notice}>Legacy operational totals include simulations and reference-price differences. Use <Link href="/admin/sales?section=analytics">Sales & cash</Link> for verified real sales and actual discounts.</p>
+                <p className={s.notice}>
+                  Legacy operational totals include simulations and
+                  reference-price differences. Use{" "}
+                  <Link href="/admin/sales?section=analytics">
+                    Sales & cash
+                  </Link>{" "}
+                  for verified real sales and actual discounts.
+                </p>
                 <Filters
                   key={query}
                   section={section}
@@ -1655,13 +1629,17 @@ function Filters({
               defaultChecked={params.get(f.name) === "true"}
             />
           ) : f.type === "select" ? (
-            <select name={f.name} defaultValue={params.get(f.name) || ""}>
+            <Select
+              aria-label={f.label}
+              name={f.name}
+              defaultValue={params.get(f.name) || ""}
+            >
               {f.options?.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <input
               name={f.name}

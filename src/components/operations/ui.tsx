@@ -1,4 +1,6 @@
 "use client";
+import { Select } from "@/components/ui/Select";
+
 import { useRef, useState, type ReactNode } from "react";
 import s from "./Operations.module.css";
 export type Row = Record<string, unknown>;
@@ -98,7 +100,8 @@ export function Inputs({
               }
             />
           ) : f.type === "select" ? (
-            <select
+            <Select
+              aria-label={f.label}
               value={str(value[f.name])}
               required={f.required}
               onChange={(e) => onChange({ ...value, [f.name]: e.target.value })}
@@ -108,7 +111,7 @@ export function Inputs({
                   {o.label}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : f.type === "textarea" ? (
             <textarea
               required={f.required}
@@ -229,7 +232,12 @@ export function Table({
   select?: (row: Row) => void;
 }) {
   return (
-    <div className={s.tableWrap}>
+    <div
+      className={s.tableWrap}
+      tabIndex={0}
+      role="region"
+      aria-label="Records table, scroll horizontally for more columns"
+    >
       <table>
         <thead>
           <tr>
