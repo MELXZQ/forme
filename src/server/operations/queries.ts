@@ -214,6 +214,8 @@ export async function inventoryList(actor: Actor, q: Filters, all = false) {
       (!q.category || v.categoryId === q.category) &&
       (!q.collection || v.collections.some((c) => c.id === q.collection)) &&
       (!q.status || v.productStatus === q.status) &&
+      (!yes(q, "active") || (v.enabled && v.productStatus !== "ARCHIVED")) &&
+      (!yes(q, "zero") || warehouse?.available === 0) &&
       (!q.availability || v.availability === q.availability) &&
       (!yes(q, "low") ||
         (v.lowStockThreshold !== null &&
@@ -279,6 +281,9 @@ export async function transferList(actor: Actor, q: Filters) {
         (t) =>
           (!q.q || contains(t.number + " " + t.trackingNumber, text(q, "q"))) &&
           (!q.status || t.status === q.status) &&
+          (!yes(q, "awaitingReceipt") ||
+            (["SENT", "PARTIAL"].includes(t.status) &&
+              t.lines.some((l) => remaining(l) > 0))) &&
           (!yes(q, "overdue") ||
             (["SENT", "PARTIAL"].includes(t.status) &&
               !!t.etaEnd &&

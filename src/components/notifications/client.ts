@@ -1,3 +1,4 @@
+import { announceAdminChange } from "@/lib/admin-refresh";
 export async function api<T = Record<string, unknown>>(
   path: string,
   body?: unknown,
@@ -22,5 +23,6 @@ export async function api<T = Record<string, unknown>>(
         ),
       ].join("\n"),
     );
+  if (body !== undefined) announceAdminChange();
   return data.data;
 }

@@ -1,0 +1,93 @@
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(840px, 100%);
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100%;
+  border: 0;
+  border-left: 1px solid #d8d3c9;
+  padding: 0;
+  color: #292b2c;
+  background: #f8f7f4;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: -12px 0 45px #0002;
+}
+.drawer::backdrop {
+  background: #24272666;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 25px;
+  border-bottom: 1px solid #ddd8cf;
+  background: #f8f7f4;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.heading h2 {
+  font-size: 20px;
+}
+.heading button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #ddd8cf;
+  background: transparent;
+}
+.links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 25px;
+  font-size: 12px;
+}
+.links a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.links button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #ddd8cf;
+  border-radius: 8px;
+  background: #eeeae2;
+}
+.body {
+  padding: 8px 25px 40px;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+.body > h2 {
+  margin: 20px 0 12px;
+  font-size: 20px;
+}
+.body > p {
+  line-height: 1.7;
+  margin-block: 12px;
+}
+.body > a {
+  display: inline-block;
+  margin: 8px 0 16px;
+  text-decoration: underline;
+}
+.body pre {
+  max-width: 100%;
+  overflow: auto;
+}
+@media (max-width: 640px) {
+  .heading,
+  .links {
+    padding-inline: 18px;
+  }
+  .body {
+    padding-inline: 18px;
+  }
+}

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { HttpError } from "@/server/errors";
 import { AdminApp, type CatalogueSection } from "@/components/admin/AdminApp";
 import { requireStaff } from "@/server/operations/accounts";
+import { HomeApp } from "@/components/home/HomeApp";
 export const dynamic = "force-dynamic";
 export default async function AdminPage({
   searchParams,
@@ -14,13 +15,8 @@ export default async function AdminPage({
   let actor;
   try {
     actor = await requireStaff(await headers());
-    if (query.catalogue !== "1")
-      redirect(
-        actor.role === "viewer"
-          ? "/admin/notifications"
-          : "/admin/sales?section=home",
-      );
-    if (actor.role !== "admin") redirect("/admin/operations");
+    if (query.catalogue === "1" && actor.role !== "admin")
+      redirect("/admin/operations");
   } catch (e) {
     if (e instanceof HttpError && e.status === 401) redirect("/admin/login");
     if (e instanceof HttpError && e.status === 403)
@@ -31,6 +27,12 @@ export default async function AdminPage({
       );
     throw e;
   }
+  if (query.catalogue !== "1")
+    return (
+      <AdminShell actor={actor}>
+        <HomeApp />
+      </AdminShell>
+    );
   const section = (
     ["products", "categories", "collections", "media", "home"].includes(
       query.section || "",

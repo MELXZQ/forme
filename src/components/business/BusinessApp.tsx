@@ -492,6 +492,9 @@ export function BusinessApp() {
     );
   if (section === "expenses")
     filters.push(
+      select("dataKind", "Record scope", ["REAL", "TEST"], false),
+      f("pending", "Open with outstanding balance", "checkbox"),
+      f("exception", "Unresolved expense alerts", "checkbox"),
       { ...category(meta), name: "category", required: false },
       select("result", "Outcome", ["PENDING", "CONFIRMED"], false),
       select("dateField", "Date basis", ["created", "due", "paid"], false),
@@ -531,6 +534,15 @@ export function BusinessApp() {
     );
   if (section === "logistics")
     filters.push(
+      select(
+        "source",
+        "Record unit",
+        ["PARCEL", "TRANSFER", "ORDER", "RETURN"],
+        false,
+      ),
+      select("dataKind", "Record scope", ["REAL", "TEST"], false),
+      f("inTransit", "Dispatched / in transit", "checkbox"),
+      f("awaitingArrival", "Arrival not completed", "checkbox"),
       select(
         "type",
         "Type",

@@ -6,6 +6,7 @@ import { actionSchema, timezone } from "./validation";
 import { canView, redact, validatePeople, internalLink } from "./access";
 import { localDay, dateBounds } from "./time";
 import { z } from "zod";
+import { nonRealRecordIds } from "../business/scope";
 const filters = z.object({
   view: z.enum(["today", "all", "unfinished"]).default("today"),
   day: z.string().optional(),
@@ -16,7 +17,8 @@ const filters = z.object({
       "LOGISTICS",
       "SYSTEM",
       "PROCUREMENT",
-      "FINANCE", "ORDER",
+      "FINANCE",
+      "ORDER",
     ])
     .optional(),
   severity: z.coerce.number().int().min(0).max(3).optional(),
@@ -29,6 +31,18 @@ const filters = z.object({
   unread: z.enum(["true", "false"]).optional(),
   pinned: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
+  dataKind: z.enum(["REAL", "TEST"]).optional(),
+  objectType: z
+    .enum([
+      "expense",
+      "order",
+      "parcel",
+      "sku",
+      "transfer",
+      "case",
+      "compensation",
+    ])
+    .optional(),
 });
 export async function listNotifications(actor: Actor, input: unknown) {
   staff(actor);
@@ -45,7 +59,9 @@ export async function listNotifications(actor: Actor, input: unknown) {
     throw new HttpError(400, "Choose a valid calendar date.");
   }
   const rows = await db.notification.findMany({
-    include: { receipts: { where: { userId: actor.id } } },
+    include: {
+      receipts: { where: { OR: [{ userId: actor.id }, { kind: "ACK" }] } },
+    },
     orderBy: [
       { pinned: "desc" },
       { severity: "desc" },
@@ -53,7 +69,13 @@ export async function listNotifications(actor: Actor, input: unknown) {
       { id: "asc" },
     ],
   });
-  const visible = rows.filter((n) => canView(actor, n));
+  const scope = q.dataKind ? await nonRealRecordIds() : null;
+  const visible = rows.filter(
+    (n) =>
+      canView(actor, n) &&
+      (!q.dataKind ||
+        (scope?.get(`${n.objectType}:${n.objectId}`) || "REAL") === q.dataKind),
+  );
   const unfinished = visible.filter(
     (n) => n.actionable && ["OPEN", "IN_PROGRESS"].includes(n.status),
   ).length;
@@ -65,6 +87,7 @@ export async function listNotifications(actor: Actor, input: unknown) {
       (q.view !== "unfinished" ||
         (n.actionable && ["OPEN", "IN_PROGRESS"].includes(n.status))) &&
       (!q.type || n.type === q.type) &&
+      (!q.objectType || n.objectType === q.objectType) &&
       (q.severity === undefined || n.severity === q.severity) &&
       (!q.status || n.status === q.status) &&
       (!q.assignee || n.assigneeId === q.assignee) &&
@@ -72,27 +95,57 @@ export async function listNotifications(actor: Actor, input: unknown) {
       (q.pinned !== "true" || n.pinned) &&
       (q.unread !== "true" ||
         !n.receipts.some(
-          (r) => r.kind === "READ" && r.version === n.version,
+          (r) =>
+            r.userId === actor.id &&
+            r.kind === "READ" &&
+            r.version === n.version,
         )) &&
       (q.confirm !== "true" ||
         (n.confirmerIds.includes(actor.id) &&
           !n.receipts.some(
-            (r) => r.kind === "ACK" && r.version === n.version,
+            (r) =>
+              r.userId === actor.id &&
+              r.kind === "ACK" &&
+              r.version === n.version,
           ))),
   );
   const page = Math.min(q.page, Math.max(1, Math.ceil(results.length / 25)));
+  const assignees = await db.user.findMany({
+    where: {
+      id: {
+        in: results
+          .slice((page - 1) * 25, page * 25)
+          .flatMap((n) => (n.assigneeId ? [n.assigneeId] : [])),
+      },
+    },
+    select: { id: true, name: true },
+  });
   return {
     items: results.slice((page - 1) * 25, page * 25).map((n) => ({
       ...redact(n, actor),
       unread: !n.receipts.some(
-        (r) => r.kind === "READ" && r.version === n.version,
+        (r) =>
+          r.userId === actor.id && r.kind === "READ" && r.version === n.version,
       ),
       needsConfirmation:
         n.confirmerIds.includes(actor.id) &&
-        !n.receipts.some((r) => r.kind === "ACK" && r.version === n.version),
+        !n.receipts.some(
+          (r) =>
+            r.userId === actor.id &&
+            r.kind === "ACK" &&
+            r.version === n.version,
+        ),
+      confirmed: n.confirmerIds.filter((id) =>
+        n.receipts.some(
+          (r) => r.userId === id && r.kind === "ACK" && r.version === n.version,
+        ),
+      ).length,
+      assigneeName:
+        assignees.find((a) => a.id === n.assigneeId)?.name || "Unassigned",
       receipts: undefined,
     })),
     total: results.length,
+    pinnedTotal: results.filter((n) => n.pinned).length,
     page,
     pageCount: Math.max(1, Math.ceil(results.length / 25)),
     unfinished,

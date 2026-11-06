@@ -1,4 +1,5 @@
 "use client";
+import { announceAdminChange } from "@/lib/admin-refresh";
 import { Select } from "@/components/ui/Select";
 
 import { useRef, useState } from "react";
@@ -94,6 +95,7 @@ export async function businessApi(path: string, body?: unknown) {
         ),
       ].join("\n"),
     );
+  if (body !== undefined) announceAdminChange();
   return v.data as Row;
 }
 export function BusinessForm({

@@ -9,7 +9,8 @@
 Finder 打开本目录，双击 **Start Website.command**，保持终端打开。它启动数据库、网站和每分钟一次的订单预留释放与通知检查任务。
 
 - 商城：http://127.0.0.1:3000
-- 按角色显示的综合待办首页：http://127.0.0.1:3000/admin
+- 按个人保存布局的 Home 工作台：http://127.0.0.1:3000/admin
+- 原综合待办 My work：http://127.0.0.1:3000/admin/sales?section=home
 - 通知中心：http://127.0.0.1:3000/admin/notifications
 - 高级订单、经营统计、售后与补偿：http://127.0.0.1:3000/admin/sales
 - 商品后台：http://127.0.0.1:3000/admin?catalogue=1
@@ -48,15 +49,15 @@ npm run admin:create
 
 后台采用两层导航：上层选择业务板块，下层显示该板块的子页面。手机上通过 **Section** 下拉选择板块，子页面一行可左右滑动。入口按已有账号权限显示，服务端权限检查保持有效。
 
-| 板块 | 子页面 |
-|---|---|
-| Workspace | 我的工作、今日与置顶、全部通知、未完成任务、待确认、分配给我 |
-| Orders | 订单查询、发货、售后、补偿 |
-| Inventory | 库存、调拨、盘点、物流、库存历史 |
-| Purchasing | 采购、供应商 |
-| Finance | 经营统计、支出、循环支出 |
-| Catalogue | 商品、分类、系列、媒体、首页、活动关联 |
-| Settings | 账号、权限、店铺设置、通知规则、订单时限规则 |
+| 板块       | 子页面                                                             |
+| ---------- | ------------------------------------------------------------------ |
+| Workspace  | Home、我的工作、今日与置顶、全部通知、未完成任务、待确认、分配给我 |
+| Orders     | 订单查询、发货、售后、补偿                                         |
+| Inventory  | 库存、调拨、盘点、物流、库存历史                                   |
+| Purchasing | 采购、供应商                                                       |
+| Finance    | 经营统计、支出、循环支出                                           |
+| Catalogue  | 商品、分类、系列、媒体、首页、活动关联                             |
+| Settings   | 账号、权限、店铺设置、通知规则、订单时限规则                       |
 
 商品后台的子页面现在保存在 URL 中，刷新或浏览器返回会保留位置。顶部 **Test workspace** 表示隔离测试库，**Local workspace** 表示日常本地库。
 
@@ -66,6 +67,8 @@ npm run admin:create
 
 ## 使用文档
 
+- [Home 工作台操作手册](docs/home-manual.md)：角色默认布局、添加/排序/尺寸、保存/取消、通知抽屉、指标口径、测试范围和跳转。
+- [Home 验证记录](docs/home-verification.md)：权限、个人设置、指标一致性、接口与响应式检查。
 - [订单、经营统计与售后操作手册](docs/sales-manual.md)：实际页面、保存筛选、真实/测试口径、时限、审批、外部退款登记、补发和完整样例。
 - [第三批技术说明](docs/sales-technical.md)：事件/快照、精确金额、统计公式、权限、事务、幂等、历史未知及接入边界。
 - [第三批验证记录](docs/sales-verification.md)：三批回归、接口、页面、构建与重启结果。
@@ -93,18 +96,18 @@ npm run db:migrate
 npm run db:seed
 ```
 
-迁移保留历史（当前9份），seed 按稳定标识补齐，不重置仓库余额。第三批增量迁移已在本机应用，无新增必填环境变量。旧订单不伪造付款时间、实际优惠或活动归因；新订单超时规则默认未启用。不要执行 migrate reset 或删除数据库目录。
+迁移保留完整历史，seed 按稳定标识补齐，不重置仓库余额。Home 增量迁移只为个人设置增加版本化布局字段，已在本机应用，无新增必填环境变量。旧订单不伪造付款时间、实际优惠或活动归因；新订单超时规则默认未启用。不要执行 migrate reset 或删除数据库目录。
 
-| 环境变量 | 用途 |
-|---|---|
-| DATABASE_URL | forme_app 日常最小权限连接 |
-| DIRECT_URL | forme_migrator 迁移连接 |
-| SHADOW_DATABASE_URL | 开发迁移专用影子库 |
-| BETTER_AUTH_SECRET / BETTER_AUTH_URL | 私有认证密钥 / 本机3000来源 |
-| STORAGE_DIR | 本地上传目录，默认 .local/uploads |
-| POSTGRES_BIN | 已有 PostgreSQL17 安装路径 |
-| ENABLE_OPERATIONS | 运营接口与结账开关；关闭不会恢复旧库存 |
-| ENABLE_DEV_PAYMENTS | Owner 开发模拟付款；production 始终拒绝 |
+| 环境变量                             | 用途                                    |
+| ------------------------------------ | --------------------------------------- |
+| DATABASE_URL                         | forme_app 日常最小权限连接              |
+| DIRECT_URL                           | forme_migrator 迁移连接                 |
+| SHADOW_DATABASE_URL                  | 开发迁移专用影子库                      |
+| BETTER_AUTH_SECRET / BETTER_AUTH_URL | 私有认证密钥 / 本机3000来源             |
+| STORAGE_DIR                          | 本地上传目录，默认 .local/uploads       |
+| POSTGRES_BIN                         | 已有 PostgreSQL17 安装路径              |
+| ENABLE_OPERATIONS                    | 运营接口与结账开关；关闭不会恢复旧库存  |
+| ENABLE_DEV_PAYMENTS                  | Owner 开发模拟付款；production 始终拒绝 |
 
 真实变量在忽略的 .env.local，示例见 .env.example。不要提交或打印连接凭据。数据库文件 .local/postgres/data，端口55432，仅本机；图片 .local/uploads，私有业务凭证在其 .private-business 子目录，原有素材 public/assets。
 

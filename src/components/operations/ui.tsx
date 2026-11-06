@@ -1,4 +1,5 @@
 "use client";
+import { announceAdminChange } from "@/lib/admin-refresh";
 import { Select } from "@/components/ui/Select";
 
 import { useRef, useState, type ReactNode } from "react";
@@ -54,6 +55,7 @@ export async function ops<T = unknown>(
     c.postMessage("updated");
     c.close();
   }
+  if (body !== undefined) announceAdminChange();
   return data.data as T;
 }
 export type Field = {

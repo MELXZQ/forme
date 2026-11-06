@@ -62,6 +62,7 @@ export const filterSchema = z
     shippingMethod: z.literal("STANDARD_AU").optional(),
     currency: z.literal("AUD").default("AUD"),
     dataKind: z.enum(["REAL", "TEST", "UNKNOWN", "ALL"]).default("ALL"),
+    verified: z.enum(["true", "false"]).optional(),
     amountField: z
       .enum(["merchandise", "payable", "received", "discount", "refunded"])
       .default("payable"),
@@ -85,6 +86,54 @@ export const cleanQuery = (v: Record<string, unknown>) =>
   Object.fromEntries(
     Object.entries(v).filter(([, x]) => x !== "" && x != null),
   );
+export function compensationWhere(
+  actor: Actor,
+  input: Record<string, unknown>,
+): Prisma.CompensationWhereInput {
+  staff(actor);
+  if (actor.role === "viewer")
+    throw new HttpError(403, "Aftercare permission required");
+  const q = z
+    .object({
+      status: z.string().max(60).optional(),
+      q: z.string().max(100).optional(),
+      dataKind: z.enum(["REAL", "TEST"]).optional(),
+      pendingReplacement: z.enum(["true", "false"]).optional(),
+    })
+    .parse(cleanQuery(input));
+  return {
+    AND: [
+      ...(actor.role === "admin"
+        ? []
+        : [
+            {
+              case: {
+                assigneeId: actor.id,
+                order: {
+                  paymentStatus: "PAID" as const,
+                  fulfillmentStatus: { not: "CANCELLED" as const },
+                },
+              },
+            },
+          ]),
+      ...(q.dataKind ? [{ order: { dataKind: q.dataKind } }] : []),
+      ...(q.status ? [{ status: q.status }] : []),
+      ...(q.q ? [{ number: { contains: q.q } }] : []),
+      ...(q.pendingReplacement === "true"
+        ? [
+            {
+              type: "REPLACEMENT",
+              status: { in: ["APPROVED", "EXECUTING", "FAILED"] },
+              OR: [
+                { replacement: null },
+                { replacement: { status: { not: "SHIPPED" } } },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+}
 export type Filter = z.infer<typeof filterSchema>;
 export function lineWhere(q: Filter): Prisma.OrderLineWhereInput {
   const and: Prisma.OrderLineWhereInput[] = [];
@@ -193,6 +242,15 @@ export async function orderWhere(
       });
   }
   if (q.payment) and.push({ paymentStatus: q.payment });
+  if (q.verified === "true")
+    and.push({
+      events: {
+        some: {
+          type: "PAYMENT_SUCCEEDED",
+          dataKind: q.dataKind === "TEST" ? "TEST" : "REAL",
+        },
+      },
+    });
   if (q.fulfillment) and.push({ fulfillmentStatus: q.fulfillment });
   if (q.transport === "NOT_SHIPPED") and.push({ shippedAt: null });
   if (q.transport === "IN_TRANSIT")

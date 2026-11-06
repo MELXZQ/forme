@@ -9,6 +9,7 @@ import {
   saveFilter,
   caseDetail,
   compensationDetail,
+  compensationWhere,
 } from "@/server/sales/queries";
 import { analytics } from "@/server/sales/analytics";
 import { dashboard } from "@/server/sales/dashboard";
@@ -75,21 +76,7 @@ async function handle(
             page,
           };
         } else {
-          const where = {
-            ...(actor.role === "admin"
-              ? {}
-              : {
-                  case: {
-                    assigneeId: actor.id,
-                    order: {
-                      paymentStatus: "PAID" as const,
-                      fulfillmentStatus: { not: "CANCELLED" as const },
-                    },
-                  },
-                }),
-            ...(status ? { status } : {}),
-            ...(query.q ? { number: { contains: query.q.slice(0, 100) } } : {}),
-          };
+          const where = compensationWhere(actor, query);
           data = {
             items: await db.compensation.findMany({
               where,

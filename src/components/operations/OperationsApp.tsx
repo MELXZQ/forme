@@ -1515,6 +1515,8 @@ function Filters({
     { name: "etaTo", label: "ETA to", type: "date" },
     ...[
       ["low", "Low stock in selected warehouse"],
+      ["active", "Enabled SKUs, excluding archived products"],
+      ["zero", "Zero available in selected warehouse"],
       ["unavailable", "Has unavailable stock"],
       ["transit", "In transit"],
       ["overdue", "Overdue transit"],
@@ -1593,6 +1595,11 @@ function Filters({
     ),
   ];
   const transfers: Field[] = [
+    {
+      name: "awaitingReceipt",
+      label: "Awaiting receipt (remaining quantities)",
+      type: "checkbox",
+    },
     select("status", "Transfer state", [
       "DRAFT",
       "SENT",

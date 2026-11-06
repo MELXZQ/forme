@@ -1,4 +1,5 @@
 "use client";
+import { announceAdminChange } from "@/lib/admin-refresh";
 import { Select } from "@/components/ui/Select";
 
 import { useState, useRef } from "react";
@@ -67,6 +68,7 @@ export async function api(path: string, body?: unknown) {
         ),
       ].join("\n"),
     );
+  if (body !== undefined) announceAdminChange();
   return obj(v.data);
 }
 export const localInput = (v: unknown) =>

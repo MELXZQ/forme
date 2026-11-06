@@ -214,6 +214,7 @@ function Filter({
         f("carrier", "Carrier"),
         choose("shippingMethod", "Delivery method", ["STANDARD_AU"]),
         choose("dataKind", "Data view", ["ALL", "REAL", "TEST", "UNKNOWN"]),
+        f("verified", "Recorded successful payment only", "checkbox"),
         ...(owner
           ? [
               choose("amountField", "Amount basis", [
@@ -1183,6 +1184,33 @@ export function SalesApp() {
                     />
                   </label>
                   <button>Apply filters</button>
+                  {section === "compensations" && (
+                    <>
+                      <label>
+                        Record scope
+                        <Select
+                          name="dataKind"
+                          aria-label="Compensation record scope"
+                          defaultValue={search.get("dataKind") || ""}
+                        >
+                          <option value="">All</option>
+                          <option value="REAL">REAL</option>
+                          <option value="TEST">TEST</option>
+                        </Select>
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="pendingReplacement"
+                          value="true"
+                          defaultChecked={
+                            search.get("pendingReplacement") === "true"
+                          }
+                        />{" "}
+                        Approved replacement awaiting dispatch
+                      </label>
+                    </>
+                  )}
                   <Link href={href(section)}>Clear</Link>
                 </form>
               )}

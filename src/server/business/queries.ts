@@ -22,6 +22,8 @@ import { logisticsList, parcelDetail } from "./logistics";
 import { cycleDate } from "./calendar";
 import { attachmentPermission } from "./attachments";
 import { localDay } from "../notifications/time";
+import { nonRealRecordIds } from "./scope";
+import { canView } from "../notifications/access";
 const querySchema = z
   .object({
     q: z.string().max(200).optional(),
@@ -67,6 +69,12 @@ const querySchema = z
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(25),
     format: z.enum(["csv"]).optional(),
+    dataKind: z.enum(["REAL", "TEST"]).optional(),
+    pending: z.enum(["true", "false"]).optional(),
+    exception: z.enum(["true", "false"]).optional(),
+    source: z.enum(["PARCEL", "TRANSFER", "ORDER", "RETURN"]).optional(),
+    inTransit: z.enum(["true", "false"]).optional(),
+    awaitingArrival: z.enum(["true", "false"]).optional(),
   })
   .refine((v) => !v.from || !v.to || v.from <= v.to, "Reversed date range");
 const contains = (a: unknown, b?: string) =>
@@ -74,6 +82,16 @@ const contains = (a: unknown, b?: string) =>
   String(a ?? "")
     .toLowerCase()
     .includes(b.toLowerCase());
+// Request-local sharing for overview metrics; never shared between users or requests.
+function cached<T>(
+  cache: Map<string, Promise<unknown>> | undefined,
+  key: string,
+  read: () => Promise<T>,
+): Promise<T> {
+  if (!cache) return read();
+  if (!cache.has(key)) cache.set(key, read());
+  return cache.get(key) as Promise<T>;
+}
 function paging<T>(
   items: T[],
   q: { page: number; pageSize: number; sort: string },
@@ -274,18 +292,59 @@ export async function purchaseDetail(actor: Actor, id: string) {
     }),
   };
 }
-export async function expenses(actor: Actor, raw: unknown) {
+export async function expenses(
+  actor: Actor,
+  raw: unknown,
+  cache?: Map<string, Promise<unknown>>,
+) {
   await permit(actor, "finance");
   const q = querySchema.parse(raw),
     db = database();
-  const rows = await db.expense.findMany({
-    include: { cash: { include: { correction: true } }, links: true },
-    orderBy: { createdAt: "desc" },
-  });
-  const attachments = await db.businessAttachment.findMany({
-    where: { objectType: "expense" },
-    select: { objectId: true },
-  });
+  const scope = q.dataKind
+    ? await cached(cache, "record-scope", nonRealRecordIds)
+    : null;
+  const excludedIds = scope
+    ? [...scope.entries()]
+        .filter(
+          ([key, kind]) =>
+            key.startsWith("expense:") &&
+            (q.dataKind !== "TEST" || kind === "TEST"),
+        )
+        .map(([key]) => key.slice(8))
+    : [];
+  const rows = await cached(cache, "expenses:rows:" + q.dataKind, () =>
+    db.expense.findMany({
+      where: q.dataKind
+        ? {
+            id:
+              q.dataKind === "TEST"
+                ? { in: excludedIds }
+                : { notIn: excludedIds },
+          }
+        : {},
+      include: { cash: { include: { correction: true } }, links: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  );
+  const attachments = await cached(cache, "expenses:attachments", () =>
+    db.businessAttachment.findMany({
+      where: { objectType: "expense" },
+      select: { objectId: true },
+    }),
+  );
+  const alerts =
+    q.exception === "true"
+      ? (
+          await db.notification.findMany({
+            where: {
+              objectType: "expense",
+              conditionActive: true,
+              status: { in: ["OPEN", "IN_PROGRESS"] },
+              actionable: true,
+            },
+          })
+        ).filter((n) => canView(actor, n))
+      : [];
   const inRange = (d: Date | null | undefined, zone: string) =>
     !!d &&
     (!q.from ||
@@ -318,6 +377,8 @@ export async function expenses(actor: Actor, raw: unknown) {
       (!q.category || e.categoryId === q.category) &&
       (!q.currency || e.currency === q.currency) &&
       (!q.payment || e.paymentStatus === q.payment) &&
+      (q.pending !== "true" || (e.status === "OPEN" && e.outstanding > 0)) &&
+      (q.exception !== "true" || alerts.some((n) => n.objectId === e.id)) &&
       (!q.result || e.resultStatus === q.result) &&
       (q.min === undefined || e.amount >= q.min) &&
       (q.max === undefined || e.amount <= q.max) &&
@@ -489,17 +550,30 @@ export async function recurringList(actor: Actor) {
     ).map((r) => ({ ...r, nextDue: cycleDate(r, r.nextIndex) })),
   };
 }
-export async function logistics(actor: Actor, raw: unknown) {
+export async function logistics(
+  actor: Actor,
+  raw: unknown,
+  cache?: Map<string, Promise<unknown>>,
+) {
   const q = querySchema.parse(raw);
-  const rows = await logisticsList(actor);
+  const rows = await cached(cache, "logistics:rows", () =>
+    logisticsList(actor),
+  );
+  const scope = q.dataKind
+    ? await cached(cache, "record-scope", nonRealRecordIds)
+    : null;
   const grace = (
-    await database().notificationRuleSettings.findUniqueOrThrow({
-      where: { id: "notifications" },
-    })
+    await cached(cache, "logistics:rules", () =>
+      database().notificationRuleSettings.findUniqueOrThrow({
+        where: { id: "notifications" },
+      }),
+    )
   ).overdueGraceDays;
-  const skuNames = await database().productVariant.findMany({
-    select: { id: true, sku: true, product: { select: { name: true } } },
-  });
+  const skuNames = await cached(cache, "logistics:skus", () =>
+    database().productVariant.findMany({
+      select: { id: true, sku: true, product: { select: { name: true } } },
+    }),
+  );
   const filtered = rows.filter((r) => {
     const zone = String(r.timezone),
       key =
@@ -533,6 +607,17 @@ export async function logistics(actor: Actor, raw: unknown) {
         q.q,
       ) &&
       (!q.type || r.type === q.type) &&
+      (!q.source || r.source === q.source) &&
+      (!q.dataKind ||
+        (scope?.get(
+          `${r.source === "RETURN" ? "order" : String(r.source).toLowerCase()}:${r.source === "PARCEL" ? r.id : r.reference}`,
+        ) || "REAL") === q.dataKind) &&
+      (q.inTransit !== "true" ||
+        ["DISPATCHED", "IN_TRANSIT"].includes(String(r.transportStatus))) &&
+      (q.awaitingArrival !== "true" ||
+        !["SIGNED", "LOST", "RETURNED", "CANCELLED", "CLOSED"].includes(
+          String(r.transportStatus),
+        )) &&
       (!q.status || r.transportStatus === q.status) &&
       (!q.acceptance || r.acceptanceStatus === q.acceptance) &&
       (!q.warehouse || r.warehouse === q.warehouse) &&
@@ -542,15 +627,19 @@ export async function logistics(actor: Actor, raw: unknown) {
       (!(q.from || q.to) ||
         (!!value &&
           (!q.from ||
-            localDay(
-              new Date(value),
-              zone as "Asia/Shanghai" | "Australia/Melbourne",
-            ) >= q.from) &&
+            (q.dateField === "eta"
+              ? new Date(value).toISOString().slice(0, 10)
+              : localDay(
+                  new Date(value),
+                  zone as "Asia/Shanghai" | "Australia/Melbourne",
+                )) >= q.from) &&
           (!q.to ||
-            localDay(
-              new Date(value),
-              zone as "Asia/Shanghai" | "Australia/Melbourne",
-            ) <= q.to))) &&
+            (q.dateField === "eta"
+              ? new Date(value).toISOString().slice(0, 10)
+              : localDay(
+                  new Date(value),
+                  zone as "Asia/Shanghai" | "Australia/Melbourne",
+                )) <= q.to))) &&
       (q.discrepancy !== "true" || !!r.exception) &&
       (q.overdue !== "true" ||
         (!!r.etaEnd &&

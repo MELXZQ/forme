@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "test:home": "node --conditions=react-server --import tsx scripts/home-test.ts",
+    "test:home:http": "node scripts/home-http.mjs",
     "assets": "node scripts/generate-assets.mjs",
     "format": "prettier --write .",
     "verify:routes": "node --import tsx scripts/check-routes.ts",

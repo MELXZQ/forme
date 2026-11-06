@@ -26,6 +26,7 @@ export function adminGroups(
       id: "work",
       label: "Workspace",
       links: [
+        { label: "Home", href: "/admin" },
         ...(orders ? [sales("home", "My work")] : []),
         { label: "Today & pinned", href: "/admin/notifications" },
         { label: "All notifications", href: "/admin/notifications?view=all" },
@@ -130,7 +131,9 @@ export function adminGroups(
 export function adminLocation(pathname: string, query: string): string {
   const params = new URLSearchParams(query);
   if (pathname === "/admin")
-    return `/admin?catalogue=1&section=${params.get("section") || "products"}`;
+    return params.get("catalogue") === "1"
+      ? `/admin?catalogue=1&section=${params.get("section") || "products"}`
+      : "/admin";
   if (pathname === "/admin/notifications") {
     const view = params.get("view") || "today";
     if (view === "today") return pathname;
